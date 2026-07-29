@@ -107,12 +107,16 @@ qdrant_vectorstore = QdrantVectorStore.from_existing_collection(
     url=os.getenv("QDRANT_URL"),
     api_key=os.getenv("QDRANT_API_KEY"),
 )
-qdrant_retriever = qdrant_vectorstore.as_retriever(search_kwargs={"k": 5})
+qdrant_retriever = qdrant_vectorstore.as_retriever(search_kwargs={"k": 8})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_BM25_PATH = os.path.abspath(os.path.join(BASE_DIR, "../../data/processed/bm25_retriever.pkl"))
 BM25_PATH = os.getenv("BM25_PATH", DEFAULT_BM25_PATH)
 
+# ── BM25 Optional Loading ─────────────────────────────────────────────────────
+# BM25 tăng chất lượng tìm kiếm từ khóa (hybrid search)
+# Nếu không có file pkl (e.g. Render free tier) → fallback về Qdrant-only (vẫn tốt)
+# ─────────────────────────────────────────────────────────────────────────────
 if not os.path.exists(BM25_PATH):
     candidates = [
         os.path.join(BASE_DIR, "bm25_retriever.pkl"),
@@ -124,14 +128,33 @@ if not os.path.exists(BM25_PATH):
             BM25_PATH = c
             break
 
-print(f"Đang tải bộ tìm kiếm từ khóa BM25 từ {BM25_PATH}...")
-with open(BM25_PATH, "rb") as f:
-    bm25_retriever = pickle.load(f)
+bm25_retriever = None
+if os.path.exists(BM25_PATH):
+    try:
+        print(f"Đang tải BM25 từ {BM25_PATH}...")
+        with open(BM25_PATH, "rb") as f:
+            bm25_retriever = pickle.load(f)
+        print("   ✅ BM25 Retriever loaded — Hybrid Search (Qdrant + BM25) bật.")
+    except Exception as e:
+        print(f"   ⚠️ Không thể load BM25 ({e}). Fallback về Qdrant-only search.")
+        bm25_retriever = None
+else:
+    print("ℹ️  [BM25] Không tìm thấy file pkl → Dùng Qdrant-only search (production mode).")
+
 
 def custom_hybrid_search(query):
+    """
+    Tìm kiếm Hybrid: Qdrant vector + BM25 keyword.
+    Nếu BM25 không có → Qdrant-only với k=8 để bù lại.
+    """
     qdrant_docs = qdrant_retriever.invoke(query)
+
+    if bm25_retriever is None:
+        # Qdrant-only mode (production khi không có BM25 file)
+        return qdrant_docs
+
+    # Hybrid: interleave Qdrant + BM25 results (RRF style)
     bm25_docs = bm25_retriever.invoke(query)
-    
     unique_docs = []
     seen_content = set()
     for i in range(max(len(qdrant_docs), len(bm25_docs))):
@@ -141,7 +164,7 @@ def custom_hybrid_search(query):
         if i < len(qdrant_docs) and qdrant_docs[i].page_content not in seen_content:
             unique_docs.append(qdrant_docs[i])
             seen_content.add(qdrant_docs[i].page_content)
-    return unique_docs[:5]
+    return unique_docs[:8]
 
 # ==========================================
 # PHẦN 2: KHỞI TẠO LLM VÀ GIÁM KHẢO (GRADER)
