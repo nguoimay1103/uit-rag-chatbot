@@ -117,12 +117,19 @@ SUPABASE_URL              = https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY = eyJhbGci...
 SUPABASE_JWT_SECRET       = your-jwt-secret
 USE_RERANKER              = false
+BM25_PATH                 = data/processed/bm25_retriever.pkl
 ALLOWED_ORIGINS           = https://your-app.vercel.app,http://localhost:8501
 ```
 
-> ℹ️ **BM25_PATH không cần thiết trên Render Free Tier.** Khi không có file BM25, hệ thống tự động chuyển sang Qdrant-only search (vẫn đảm bảo chất lượng tốt).
+### 2.4 — Upload BM25 file
 
-### 2.4 — Kiểm tra
+```bash
+git add data/processed/bm25_retriever.pkl
+git commit -m "feat: add BM25 data"
+git push
+```
+
+### 2.5 — Kiểm tra
 
 Sau deploy (~5 phút), truy cập:
 `https://uit-rag-backend.onrender.com/health` → Phải thấy `{"status":"ok"}`
