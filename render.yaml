@@ -1,0 +1,29 @@
+# render.yaml — Render.com deployment configuration
+# Deploy FastAPI backend lên Render Free Tier (750h/tháng)
+
+services:
+  - type: web
+    name: uit-rag-backend
+    runtime: python
+    region: singapore          # Gần Việt Nam nhất
+    plan: free
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: python -m uvicorn backend.app.api:app --host 0.0.0.0 --port $PORT
+    rootDir: .                 # Root của project
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: USE_RERANKER
+        value: "false"         # Tắt BAAI reranker để tiết kiệm RAM
+      - key: PORT
+        value: "10000"
+      # Các biến sau phải set thủ công trong Render Dashboard:
+      # OPENAI_API_KEY
+      # QDRANT_URL
+      # QDRANT_API_KEY
+      # SUPABASE_URL
+      # SUPABASE_SERVICE_ROLE_KEY
+      # SUPABASE_JWT_SECRET
+      # ALLOWED_ORIGINS (Vercel domain của bạn)
+      # BM25_PATH (đường dẫn tới file pkl trong Docker/repo)
+    healthCheckPath: /health

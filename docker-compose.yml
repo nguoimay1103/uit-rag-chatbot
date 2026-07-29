@@ -1,0 +1,36 @@
+services:
+  backend:
+    build: ./backend
+    container_name: uit_rag_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env  # Nạp các biến OPENAI_API_KEY, QDRANT_URL, QDRANT_API_KEY
+    environment:
+      - BM25_PATH=/app/data/processed/bm25_retriever.pkl
+    networks:
+      - rag_network
+    restart: unless-stopped
+    volumes:
+      - ./backend:/app # Ánh xạ thư mục để khi bạn sửa code Python, container tự cập nhật
+      - ./data:/app/data
+
+  frontend:
+    build: ./frontend
+    container_name: uit_rag_frontend
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+    environment:
+      # Báo cho Gradio biết Backend đang nằm ở vùng mạng nội bộ có tên service là 'backend'
+      - BACKEND_URL=http://backend:8000
+    networks:
+      - rag_network
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+
+networks:
+  rag_network:
+    driver: bridge

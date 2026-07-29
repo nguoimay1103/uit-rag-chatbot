@@ -1,0 +1,202 @@
+[
+    {
+        "question": "Danh sách giảng viên tham gia giảng dạy CTTT có thể xem ở đâu?",
+        "ground_truth": "Có thể xem danh sách giảng viên tham gia giảng dạy CTTT trên trang thông tin điện tử của nhà trường."
+    },
+    {
+        "question": "Quy định nào liên quan đến việc chọn lựa cán bộ phản biện?",
+        "ground_truth": "Khi chọn CBPB phải khác với CBHD và không được là người có quan hệ ruột thịt với SV (cha, mẹ, vợ, chồng, anh, chị, em ruột)."
+    },
+    {
+        "question": "Yêu cầu đối với giấy nháp và giấy thi của sinh viên là gì?",
+        "ground_truth": "Đối với giấy nháp và giấy thi của sinh viên, cần phải có đầy đủ chữ ký và họ tên của tất cả CBCT."
+    },
+    {
+        "question": "Thành phố trực thuộc Trung ương nơi đặt Trạm ĐTTX có nhận được báo cáo thông tin liên quan đến việc đặt hoặc thôi đặt Trạm ĐTTX khi chưa có quyết định của Hiệu trưởng không?",
+        "ground_truth": "Tại thời điểm ngay sau khi có quyết định của Hiệu trưởng, Trường mới gửi báo cáo thông tin liên quan đến việc đặt hoặc thôi đặt Trạm ĐTTX đến thành phố trực thuộc Trung ương nơi đặt Trạm ĐTTX."
+    },
+    {
+        "question": "Trường hợp nào khiến giảng viên bị đưa ra khỏi quy hoạch giảng dạy của một môn học?",
+        "ground_truth": "GVMH/TGMH có kết quả khảo sát giảng dạy chưa được sinh viên hài lòng và có nhiều nhận xét không tốt (theo quy định hiện hành về khảo sát giảng dạy) trong hai lần liên tiếp thì bị đưa ra khỏi quy hoạch giảng dạy của môn học đó trong một học kỳ."
+    },
+    {
+        "question": "Khi đang học đại cương sinh viên có được chuyển tiếp sang ĐHNN không?",
+        "ground_truth": "Khi đang học đại cương sinh viên không được chuyển tiếp sang ĐHNN vì chỉ khi sau giai đoạn đại cương, sinh viên đạt các điều kiện và có nguyện vọng mới được chuyển tiếp sang ĐHNN."
+    },
+    {
+        "question": "Giảng viên thỉnh giảng lần đầu tham gia giảng dạy tại Trường cần cung cấp những gì?",
+        "ground_truth": "Giảng viên thỉnh giảng lần đầu tham gia giảng dạy tại Trường cần cung cấp lý lịch khoa học và bằng cấp."
+    },
+    {
+        "question": "Thành phần tham gia tổ soạn thảo đề án mở ngành đào tạo có bao nhiêu thành viên?",
+        "ground_truth": "Tổ soạn thảo đề án mở ngành đào tạo có từ 5 đến 9 thành viên."
+    },
+    {
+        "question": "Trường có lưu lại đáp án đề thi của các năm trước hay không?",
+        "ground_truth": "Trường lưu lại Đề thi và đáp án (kèm thang điểm) dưới hình thức bản giấy. Đơn vị lưu trữ là Khoa trong thời hạn lữu trữ là 9 năm."
+    },
+    {
+        "question": "Định nghĩa của giảng viên thỉnh giảng?",
+        "ground_truth": "Giảng viên thỉnh giảng là giảng viên hoặc trợ giảng không phải là cán bộ cơ hữu của Trường ĐHCNTT."
+    },
+    {
+        "question": "Ứng dụng công nghệ thông tin trong tổ chức đào tạo qua mạng là gì?",
+        "ground_truth": "Ứng dụng công nghệ thông tin trong tổ chức đào tạo qua mạng là sử dụng các trang thiết bị điện tử, phần mềm, học liệu điện tử và mạng viễn thông (chủ yếu là mạng Internet) cho các hoạt động giảng dạy và học tập."
+    },
+    {
+        "question": "Khi nào thì sinh viên được Trường cấp email?",
+        "ground_truth": "Sinh viên sẽ được cấp email vào thời điểm nhập học."
+    },
+    {
+        "question": "Khi Ban Điều hành cấp Trường đề xuất phương hướng và kế hoạch phát triển CTTN thì cần trình bày với ai?",
+        "ground_truth": "Khi Ban Điều hành cấp Trường đề xuất phương hướng và kế hoạch phát triển CTTN thì trình bày với Ban Giám hiệu trường và BĐH của ĐHQG-HCM."
+    },
+    {
+        "question": "Ai là người có thể cho điểm đánh giá đề án mở ngành đào tạo??",
+        "ground_truth": "Chỉ có những người tham dự cuộc họp hội đồng thẩm định mới có thể cho điểm các đề án mở ngành."
+    },
+    {
+        "question": "Các học phần Giáo dục quốc phòng-An ninh và Giáo dục thể chất có tính vào tổng số tín chỉ của các chương trình đào tạo không?",
+        "ground_truth": "Tổng số tín chỉ của các chương trình đào tạo sẽ không tính các học phần Giáo dục quốc phòng-An ninh và Giáo dục thể chất."
+    },
+    {
+        "question": "Trạm ĐTTX phối hợp với các đơn vị của Trường về điều gì?",
+        "ground_truth": "Trạm ĐTTX có trách nhiệm phối hợp với các đơn vị của Trường về công tác tuyển sinh, tổ chức đào tạo, học phí và những công tác liên quan khác."
+    },
+    {
+        "question": "Trách nhiệm của trạm ĐTTX vào đầu khóa học là gì?",
+        "ground_truth": "Trách nhiệm của trạm ĐTTX vào đầu khóa học là thông báo với sinh viên về chương trình đào tạo toàn khóa cho từng ngành học, quy chế đào tạo và các quy định của Trường và quyền lợi và nghĩa vụ của sinh viên."
+    },
+    {
+        "question": "Trưởng đơn vị thuộc trường được miễn giảm coi thi với tỉ lệ là bao nhiêu?",
+        "ground_truth": "Trưởng đơn vị thuộc trường được miễn giảm coi thi với tỉ lệ là 75%."
+    },
+    {
+        "question": "Sinh viên tốt nghiệp CTTT có trình độ tiếng Anh như thế nào?",
+        "ground_truth": "Sinh viên tốt nghiệp CTTT có trình độ tiếng Anh thành thạo về cả 04 kỹ năng: nghe, nói, đọc, viết đáp ứng được yêu cầu giao tiếp trong môi trường làm việc quốc tế."
+    },
+    {
+        "question": "Quy chế đào tạo từ xa trình độ đại học của trường Đại học Công nghệ thông tin có được áp dụng cho sinh viên trường Đại học Bách Khoa không?",
+        "ground_truth": "Quy chế đào tạo từ xa trình độ đại học của trường Đại học Công nghệ thông tin không áp dụng cho sinh viên trường Đại học Bách Khoa."
+    },
+    {
+        "question": "Có được phép dùng bút xóa để thay đổi nội dung của sổ gốc không?",
+        "ground_truth": "Sổ gốc cấp văn bằng, chứng chỉ phải không được tẩy xóa bằng bút xóa."
+    },
+    {
+        "question": "Ý nghĩa của việc tổ chức dạy học ngoài giờ hành chính đối với sinh viên là gì?",
+        "ground_truth": "Đối với sinh viên, ý nghĩa của việc tổ chức dạy học ngoài giờ hành chính là góp phần nâng cao tỷ lệ sinh viên tốt nghiệp và tốt nghiệp đúng hạn."
+    },
+    {
+        "question": "Yêu cầu về trình độ của trợ giảng là gì?",
+        "ground_truth": "Yêu cầu về trình độ của trợ giảng là trình độ đại học trở lên hoặc là sinh viên năm cuối khóa của Trường."
+    },
+    {
+        "question": "Trong quá trình thực hiện đào tạo từ xa trình độ Đại học, nếu có vướng mắc hoặc có vấn đề mới phát sinh, các đơn vị liên quan phản ánh về đơn vị nào?",
+        "ground_truth": "Trong quá trình thực hiện quy chế đào tạo từ xa trình độ Đại học, nếu có vướng mắc hoặc có vấn đề mới phát sinh, các đơn vị liên quan phản ánh về P.ĐTĐH."
+    },
+    {
+        "question": "Hội đồng tuyển sinh gồm có những ai?",
+        "ground_truth": "Hội đồng tuyển sinh gồm có: đại diện lãnh đạo Phòng ĐTĐH, lãnh đạo Phòng ĐTSĐH, một số lãnh đạo khoa, phòng liên quan."
+    },
+    {
+        "question": "Khi có nhiều hơn 1 thành viên hội đồng vắng mặt thì việc bảo vệ khoá luận có được tiếp tục không?",
+        "ground_truth": "Khi có nhiều hơn 1 thành viên hội đồng vắng mặt thì việc bảo vệ khoá luận phải được hoãn lại."
+    },
+    {
+        "question": "Sinh viên lớp tài năng bị xếp vào diện dự bị trong bao nhiêu học kỳ thì bị loại khỏi chương trình?",
+        "ground_truth": "Sinh viên lớp tài năng bị xếp vào diện dự bị trong 02 học kỳ liên tiếp thì bị loại khỏi chương trình."
+    },
+    {
+        "question": "Các môn được giảng dạy trong chương trình chất lượng cao hoàn toàn bằng ngoại ngữ được bố trí giảng dạy từ học kỳ thứ thứ mấy?",
+        "ground_truth": "Các môn được giảng dạy hoàn toàn bằng ngoại ngữ được bố trí giảng dạy từ học kỳ thứ 4 trở đi."
+    },
+    {
+        "question": "Trước khi Hiệu Trưởng phê duyệt thì danh sách giảng viên CT CLC do ai cung cấp?",
+        "ground_truth": "Trước khi Hiệu Trưởng phê duyệt thì danh sách giảng viên CT CLC do trưởng đơn vị chuyên môn hoặc Hội đồng khoa học và đào tạo của Trường cung cấp."
+    },
+    {
+        "question": "Mục đích của phần mềm Microsoft Teams là gì đối với sinh viên?",
+        "ground_truth": "Mục đích của phần mềm Microsoft Teams đối với sinh viên là giúp sinh viên tương tác, trao đổi thông tin với giảng viên và những sinh viên khác."
+    },
+    {
+        "question": "Khi vào phòng thi, SV phải tuân thủ các quy định gì?",
+        "ground_truth": "Khi vào phòng thi, SV phải tuân thủ các quy định: xuất trình giấy tờ cá nhân hợp lệ khi CBCT yêu cầu; không được mang vào khu vực thi và phòng thi vũ khí, chất gây nổ, gây cháy, bia, rượu. Không được hút thuốc trong phòng thi; tTrước khi làm bài thi phải ghi đầy đủ họ tên, MSSV vào giấy thi, giấy nháp; bài làm phải viết rõ ràng, sạch sẽ, không nhàu nát. Nghiêm cấm làm bài bằng hai thứ mực, mực đỏ, bút chì (trừ hình tròn vẽ bằng com-pa được dùng bút chì). Các phần viết hỏng phải dùng thước gạch chéo, không dùng bút xóa; phải bảo vệ bài làm của mình, không được xem bài của SV khác, không được trao đổi ý kiến, trao đổi tài liệu khi làm bài; Không được sử dụng các vật dụng giúp gian lận trong khi thi như: tài liệu bị cấm sử dụng, phương tiện thông tin liên lạc,…;\nnếu cần hỏi CBCT điều gì phải hỏi công khai. Phải giữ gìn trật tự, im lặng trong phòng thi. Trường hợp ốm đau bất thường phải báo cáo để CBCT xử lý; khi hết giờ thi phải ngừng làm bài và chờ CBCT gọi tên để nộp bài. Không làm được bài, SV cũng phải nộp giấy thi. Khi nộp bài, SV phải tự ghi rõ số tờ giấy thi đã nộp và ký tên xác nhận vào bản danh sách theo dõi SV; SV chỉ được ra khỏi phòng thi sau 2/3 thời gian làm bài và sau khi đã nộp bài làm và đề thi cho CBCT, trừ trường hợp ốm đau cần cấp cứu do CB trực lãnh đạo thi quyết định."
+    },
+    {
+        "question": "Sinh viên trúng tuyển CTTT phải đạt những yêu cầu nào?",
+        "ground_truth": "Sinh viên trúng tuyển CTTT phải đạt những yêu cầu sau: đảm bảo điều kiện đầu vào đối với hệ đại học chính quy theo quy định của Bộ GD&ĐT và Trường ĐHCNTT; hoặc có chứng chỉ quốc tế uy tín thỏa điều kiện được xác định trong đề án tuyển sinh hàng năm của Trường; trong đó, trường hợp thí sinh là người nước ngoài phải có văn bằng tốt nghiệp tối thiểu tương đương bằng tốt nghiệp trung học phổ thông của Việt Nam, văn bằng phải được công nhận theo quy định của Bộ Giáo dục và Đào tạo."
+    },
+    {
+        "question": "Mức học bổng học tập được quy định như thế nào?",
+        "ground_truth": "Mức học bổng học tập sẽ tương ứng mức học phí học kỳ áp dụng cho học kỳ tiếp theo mà sinh viên phải đóng."
+    },
+    {
+        "question": "Sinh viên có thể bổ sung chữ kí cá nhân lên hệ thống học tập trực tuyến của trường không?",
+        "ground_truth": "Sinh viên có thể bổ sung chữ ký vào hồ sơ cá nhân trên các hệ thống phần mềm học tập trực tuyến của trường."
+    },
+    {
+        "question": "Kế hoạch đào tạo do trạm ĐTTX lập phải phù hợp với điều gì?",
+        "ground_truth": "Kế hoạch đào tạo do trạm ĐTTX lập phải phù hợp với phương thức tổ chức ĐTTX qua mạng."
+    },
+    {
+        "question": "Về việc cấp chứng chỉ thì khi nào học viên sẽ được nhận chứng chỉ?",
+        "ground_truth": "Về việc nhận chứng chỉ thì chứng chỉ sẽ được cấp sau khi người học hoàn thành chương trình đào tạo hoặc bồi dưỡng nâng cao trình độ học vấn, nghề nghiệp theo chương trình do Bộ GD&ĐT quy định hoặc ban hành."
+    },
+    {
+        "question": "Ngoài các tiêu chí cố định thì Khoa có thể đưa thêm các tiêu chí khác vào xét tuyển lớp tài năng hay không?",
+        "ground_truth": "Khoa có thể quy định thêm các hình thức kiểm tra, phỏng vấn tuyển chọn kể cả việc xem xét thêm hệ số phụ như điểm xét tuyển đại học, thành tích thi các cuộc thi học thuật nhằm xét tuyển vào lớp tài năng."
+    },
+    {
+        "question": "CBCT thu bài thi của sinh viên khi nào?",
+        "ground_truth": "CBCT thu bài của sinh viên sau khi thời gian làm bài thi kết thúc."
+    },
+    {
+        "question": "Những sinh viên tài năng nào được nhận học bổng chương trình tài năng?",
+        "ground_truth": "Tất cả các sinh viên tài năng theo danh sách chính thức từng học kỳ đều được hưởng học bổng chương trình."
+    },
+    {
+        "question": "Những đối tượng nào nằm trong phạm vi áp dụng của quy chế đào tạo từ xa trình độ đại học của trường Đại học Công nghệ thông tin?",
+        "ground_truth": "Những đối tượng nằm trong phạm vi áp dụng của quy chế đào tạo từ xa trình độ đại học của trường Đại học Công nghệ thông tin bao gồm sinh viên, giảng viên, các đơn vị và cá nhân có liên quan đến đào tạo từ xa trình độ đại học của Trường."
+    },
+    {
+        "question": "Trường hợp còn thiếu 3 tín chỉ thì có được phép công nhận xét tốt nghiệp không?",
+        "ground_truth": "Sinh viên phải đã hoàn thành các môn học, tích lũy đủ số tín chỉ theo đúng chương trình đào tạo thì mới công nhận xét tốt nghiệp."
+    },
+    {
+        "question": "Mục đích của việc kiểm tra tiến độ thực hiện KLTN giữa kỳ là gì?",
+        "ground_truth": "Mục đích của việc kiểm tra tiến độ thực hiện KLTN giữa kỳ là: Rà soát lại tiến độ thực hiện. Phát hiện những trở ngại (nếu có) từ phía CBHD hoặc từ phía SV để có biện pháp xử lý kịp thời."
+    },
+    {
+        "question": "Quy chuẩn về thời lượng học tập của một tiết học là bao nhiêu?",
+        "ground_truth": "Một tiết học được quy chuẩn bằng 50 phút."
+    },
+    {
+        "question": "Quy trình tổ chức thi hình thức  vấn đáp, đồ án diễn ra như thế nào?",
+        "ground_truth": "Quy trình tổ chức thi hình thức vấn đáp, đồ án diễn ra như sau: Phòng Đào tạo Đại học/ Văn phòng Đặc biệt sẽ xuất danh sách môn thi. Danh sách môn thi sẽ được chuyển về đơn vị quản lý môn học để điền thôgn tin thời gian thi, phòng thi, giảng viên chấm thi. Các thông tin này sẽ được Phòng Đào tạo Đại học/ Văn phòng Đặc biệt kiểm tra, import vào lịch thi hệ thống. Sau đó sẽ phân danh sách sinh viên vào phòng thi và thông báo lịch thi."
+    },
+    {
+        "question": "Có dấu hiệu nào để phân biệt được các mã đề không?",
+        "ground_truth": "Các mã đề sẽ được đánh mã số hoặc ký hiệu riêng để phân biệt."
+    },
+    {
+        "question": "Tài liệu giảng dạy của môn NNCM sử dụng tiếng gì?",
+        "ground_truth": "Tài liệu giảng dạy của môn NNCM sử dụng tiếng Anh/tiếng Nhật."
+    },
+    {
+        "question": "Giảng viên hướng dẫn KLTN cần kiểm tra và xác nhận những gì tại cổng thông tin đào tạo?",
+        "ground_truth": "Thể thức báo cáo KLTN đáp ứng đúng theo quy định của Trường và nội dung báo cáo KLTN đã được chỉnh sửa theo góp ý của cán bộ phản biện KLTN và Hội đồng chấm KLTN là những mục giảng viên hướng dẫn KLTN cần kiểm tra và xác nhận."
+    },
+    {
+        "question": "Khoa có ngành CTTN cần phối hợp với đơn vị nào để đề xuất danh sách khen thưởng sinh viên?",
+        "ground_truth": "Khoa đào tạo CTNN cần phối hợp với BĐH để đề xuất danh sách khen thưởng sinh viên."
+    },
+    {
+        "question": "Bài thi trắc nghiệm có được làm trên giấy thi như thông thường hay không?",
+        "ground_truth": "SV phải làm bài thi trên phiếu TLTN được in sẵn."
+    },
+    {
+        "question": "Ở bước 4 trong quy trình tổ chức thi vấn đáp, có đơn vị nào hỗ trợ cho P.ĐTĐH thực hiện hay không?",
+        "ground_truth": "Ở bước 4 trong quy trình tổ chức thi vấn đáp, không có đơn vị hỗ trợ cho P.ĐTĐH thực hiện công việc."
+    }
+]

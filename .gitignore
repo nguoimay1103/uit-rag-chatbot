@@ -1,0 +1,14 @@
+﻿.env
+*.env
+bm25_retriever.pkl
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.pkl
+data/processed/
+data/raw/
+reports/
+*.log
+.DS_Store
