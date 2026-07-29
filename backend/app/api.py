@@ -101,8 +101,21 @@ class RenameSessionRequest(BaseModel):
     title: str
 
 
-# ─── Health Check ────────────────────────────────────────────────────────────
+# ─── Root & Health Check ──────────────────────────────────────────────────────
+@app.get("/")
+@app.head("/")
+async def root():
+    return {
+        "status": "ok",
+        "service": "UIT Academic RAG API",
+        "version": "2.0.0",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 @app.get("/health")
+@app.head("/health")
 async def health():
     return {"status": "ok", "version": "2.0.0"}
 
