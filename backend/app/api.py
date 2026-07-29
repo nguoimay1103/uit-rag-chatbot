@@ -57,15 +57,23 @@ app = FastAPI(
 )
 
 # CORS — cho phép Vercel frontend và localhost dev
-ALLOWED_ORIGINS = os.getenv(
-    "ALLOWED_ORIGINS",
-    "http://localhost:8501,http://127.0.0.1:8501"
-).split(",")
+raw_origins = os.getenv("ALLOWED_ORIGINS", "")
+env_origins = [o.strip() for o in raw_origins.split(",") if o.strip()]
 
-# Trong production thêm domain Vercel vào ALLOWED_ORIGINS env var
+default_origins = [
+    "http://localhost:8501",
+    "http://127.0.0.1:8501",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+    "https://uit-rag-chatbot.vercel.app",
+]
+
+allowed_origins = list(set(env_origins + default_origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS + ["https://*.vercel.app"],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
