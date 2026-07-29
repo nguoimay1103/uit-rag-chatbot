@@ -1089,7 +1089,7 @@
     // ═══════════════════════════════════════════════════════
     // SUPABASE INIT
     // ═══════════════════════════════════════════════════════
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
     // ═══════════════════════════════════════════════════════
     // STATE
@@ -1110,7 +1110,7 @@
     function showRegister() { document.getElementById('loginView').style.display = 'none'; document.getElementById('registerView').style.display = ''; }
 
     async function signInWithGoogle() {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await supabaseClient.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo: window.location.origin }
       });
@@ -1123,7 +1123,7 @@
       const btn = document.getElementById('loginBtn');
       if (!email || !password) return showAuthError('loginError', 'Vui lòng nhập đầy đủ email và mật khẩu.');
       btn.disabled = true; btn.textContent = 'Đang đăng nhập...';
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
       btn.disabled = false; btn.textContent = 'Đăng nhập';
       if (error) return showAuthError('loginError', mapAuthError(error.message));
       onLoginSuccess(data.user, data.session.access_token);
@@ -1136,7 +1136,7 @@
       if (!email || !password) return showAuthError('registerError', 'Vui lòng nhập đầy đủ thông tin.');
       if (password.length < 6) return showAuthError('registerError', 'Mật khẩu tối thiểu 6 ký tự.');
       btn.disabled = true; btn.textContent = 'Đang tạo tài khoản...';
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
       btn.disabled = false; btn.textContent = 'Tạo tài khoản';
       if (error) return showAuthError('registerError', mapAuthError(error.message));
       // Supabase yêu cầu xác nhận email
@@ -1147,7 +1147,7 @@
     }
 
     async function doLogout() {
-      await supabase.auth.signOut();
+      await supabaseClient.auth.signOut();
       currentUser = null; authToken = null; currentSessionId = null;
       document.getElementById('authOverlay').classList.remove('hidden');
       messagesArea.innerHTML = '';
@@ -1419,12 +1419,12 @@
     // INIT — Check existing Supabase session on page load
     // ═══════════════════════════════════════════════════════
     (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await supabaseClient.auth.getSession();
       if (session) {
         onLoginSuccess(session.user, session.access_token);
       }
       // Listen for auth state changes (OAuth redirects)
-      supabase.auth.onAuthStateChange((_event, session) => {
+      supabaseClient.auth.onAuthStateChange((_event, session) => {
         if (session && !currentUser) {
           onLoginSuccess(session.user, session.access_token);
         }
