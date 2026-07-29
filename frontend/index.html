@@ -1430,9 +1430,9 @@
       if (session) {
         onLoginSuccess(session.user, session.access_token);
       }
-      // Listen for auth state changes (OAuth redirects)
+      // Listen for auth state changes (OAuth redirects & Token auto-refresh)
       supabaseClient.auth.onAuthStateChange((_event, session) => {
-        if (session && !currentUser) {
+        if (session) {
           onLoginSuccess(session.user, session.access_token);
         }
       });

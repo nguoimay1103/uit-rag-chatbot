@@ -8,7 +8,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 # Supabase JWT secret — lấy từ Supabase Dashboard > Settings > API > JWT Secret
-SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "")
+SUPABASE_JWT_SECRET = os.getenv("SUPABASE_JWT_SECRET", "").strip().strip("'\"")
 
 security = HTTPBearer(auto_error=False)
 
@@ -18,14 +18,14 @@ def verify_supabase_token(token: str) -> dict:
     if not SUPABASE_JWT_SECRET:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Server chưa cấu hình SUPABASE_JWT_SECRET."
+            detail="Server chưa cấu hình SUPABASE_JWT_SECRET trên Render."
         )
     try:
         payload = jwt.decode(
             token,
             SUPABASE_JWT_SECRET,
             algorithms=["HS256"],
-            audience="authenticated",
+            options={"verify_aud": False},
         )
         return payload
     except jwt.ExpiredSignatureError:
@@ -36,7 +36,7 @@ def verify_supabase_token(token: str) -> dict:
     except jwt.InvalidTokenError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Token không hợp lệ: {str(e)}",
+            detail=f"Token không hợp lệ ({str(e)}). Vui lòng đăng nhập lại.",
         )
 
 
