@@ -1139,10 +1139,17 @@
       const { data, error } = await supabaseClient.auth.signUp({ email, password });
       btn.disabled = false; btn.textContent = 'Tạo tài khoản';
       if (error) return showAuthError('registerError', mapAuthError(error.message));
-      // Supabase yêu cầu xác nhận email
+      
+      // Nếu Supabase đã tắt "Confirm email", data.session sẽ có sẵn -> Đăng nhập luôn!
+      if (data.session) {
+        onLoginSuccess(data.user, data.session.access_token);
+        return;
+      }
+
+      // Nếu Supabase yêu cầu xác nhận email
       const successEl = document.getElementById('registerSuccess');
       successEl.style.display = 'block';
-      successEl.textContent = '✅ Đã gửi email xác nhận! Vui lòng kiểm tra hộp thư và nhấn link xác nhận, sau đó quay lại đăng nhập.';
+      successEl.textContent = '✅ Đã đăng ký! Vui lòng kiểm tra hộp thư (cả thư mục Spam/Rác) hoặc đăng nhập trực tiếp.';
       document.getElementById('registerError').classList.remove('visible');
     }
 
