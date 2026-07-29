@@ -19,7 +19,8 @@ from langgraph.graph import StateGraph, START, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import CommaSeparatedListOutputParser
-from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+# HuggingFaceCrossEncoder được import LAZY — chỉ khi USE_RERANKER=true
+# Tránh kéo theo torch (~700MB) khi chạy production với USE_RERANKER=false
 load_dotenv()
 
 # ==========================================
@@ -54,6 +55,8 @@ class ResilientReranker:
     def __init__(self):
         try:
             print("Đang tải mô hình Reranker (BAAI/bge-reranker-v2-m3)...")
+            # ── Lazy import: chỉ chạy đến đây khi USE_RERANKER=true ──
+            from langchain_community.cross_encoders import HuggingFaceCrossEncoder
             encoder = HuggingFaceCrossEncoder(
                 model_name="BAAI/bge-reranker-v2-m3",
                 model_kwargs={"device": "cpu"}
