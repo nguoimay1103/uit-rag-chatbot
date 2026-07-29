@@ -1,0 +1,5 @@
+# Bỏ qua file Python cũ (Streamlit frontend) — Vercel chỉ cần index.html
+frontend.py
+requirements.txt
+__pycache__/
+*.pyc
