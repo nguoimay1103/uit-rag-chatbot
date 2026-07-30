@@ -3,7 +3,11 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- interactive-widget=resizes-content: Tells Android Chrome to shrink layout when soft keyboard opens -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
+  <!-- iOS standalone / fullscreen PWA meta -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>UIT Academic AI — Trợ lý Quy chế UIT</title>
   <meta name="description"
     content="Chatbot AI tư vấn quy chế học vụ UIT, được xây dựng trên hệ thống Agentic RAG với Zero-Hallucination.">
@@ -48,14 +52,27 @@
       -webkit-tap-highlight-color: transparent;
     }
 
+    /* ─── Mobile Viewport Fix ───────────────────────────────
+       Use dvh (dynamic viewport height) so the body always
+       fills exactly the visible area — excluding browser
+       chrome (URL bar, nav bar) on mobile.
+       Falls back to --vh CSS var set by JS on older browsers.
+    ──────────────────────────────────────────────────────── */
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
       background-color: var(--bg-primary);
       color: var(--text-main);
-      height: 100vh;
-      width: 100vw;
+      /* dvh: shrinks when browser chrome shows/hides — prevents content hidden under URL bar */
+      height: 100dvh;
+      /* Fallback for browsers without dvh support */
+      height: calc(var(--vh, 1vh) * 100);
+      width: 100%;
+      max-width: 100vw;
       display: flex;
       overflow: hidden;
+      /* iOS safe area: avoids notch / home-indicator overlap */
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
       background-image:
         radial-gradient(circle at 12% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 35%),
         radial-gradient(circle at 88% 85%, rgba(129, 140, 248, 0.08) 0%, transparent 35%);
@@ -725,7 +742,9 @@
       min-width: 0;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      /* Do NOT use a fixed height here — let flexbox fill remaining space.
+         Using height:100dvh would fight the body's dvh constraint on mobile. */
+      height: 100%;
       overflow: hidden;
       position: relative;
     }
@@ -1036,10 +1055,14 @@
     /* Input Area */
     .input-container {
       padding: 1rem 1.25rem;
+      /* Extra bottom padding on iOS for the home indicator */
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
       border-top: 1px solid var(--border-color);
       background: rgba(9, 13, 22, 0.85);
       backdrop-filter: blur(12px);
       z-index: 20;
+      /* Prevent input area from being squeezed to 0 when keyboard opens */
+      flex-shrink: 0;
     }
 
     .input-wrapper {
@@ -1144,9 +1167,15 @@
         position: fixed;
         top: 0;
         left: 0;
-        bottom: 0;
+        /* Use dvh so sidebar fills visible area even when URL bar shows */
+        height: 100dvh;
+        height: calc(var(--vh, 1vh) * 100);
         transform: translateX(-100%);
         box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+        z-index: 50;
+        /* sidebar should not be affected by body's safe-area padding */
+        padding-top: max(1.1rem, env(safe-area-inset-top));
+        padding-bottom: max(0.8rem, env(safe-area-inset-bottom));
       }
 
       .sidebar.open {
@@ -1159,6 +1188,12 @@
 
       .btn-hamburger {
         display: flex;
+      }
+
+      /* Sidebar backdrop also needs to cover full visible viewport */
+      .sidebar-backdrop {
+        height: 100dvh;
+        height: calc(var(--vh, 1vh) * 100);
       }
     }
 
@@ -1176,15 +1211,52 @@
       }
 
       .input-container {
-        padding: 0.75rem;
+        padding: 0.6rem 0.75rem;
+        padding-bottom: max(0.6rem, env(safe-area-inset-bottom));
       }
 
       .top-bar {
-        padding: 0.75rem 1rem;
+        padding: 0.65rem 0.85rem;
+      }
+
+      /* Hide input hint text on very small screens to save vertical space */
+      .input-hint {
+        display: none;
       }
 
       .auth-card {
-        padding: 1.75rem 1.25rem;
+        padding: 1.5rem 1.1rem;
+      }
+
+      /* Auth overlay: allow scroll if content is taller than viewport (e.g. small phones) */
+      #authOverlay {
+        align-items: flex-start;
+        padding-top: max(1.5rem, env(safe-area-inset-top));
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      }
+    }
+
+    /* Landscape phone — reduce vertical padding so content fits */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .top-bar {
+        padding: 0.45rem 0.85rem;
+      }
+
+      .messages-area {
+        padding: 0.6rem 1rem;
+      }
+
+      .input-container {
+        padding: 0.45rem 0.75rem;
+        padding-bottom: max(0.45rem, env(safe-area-inset-bottom));
+      }
+
+      .input-hint {
+        display: none;
+      }
+
+      .top-info p {
+        display: none;
       }
     }
   </style>
@@ -2129,6 +2201,44 @@
     function escapeJsString(str) {
       return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$/g, '\\$');
     }
+
+    // ═══════════════════════════════════════════════════════
+    // MOBILE VIEWPORT — VisualViewport API + --vh CSS variable
+    // Fixes: input hidden by soft keyboard, layout broken on
+    // orientation change, content hidden under URL bar.
+    // ═══════════════════════════════════════════════════════
+    function setVhVariable() {
+      // Sets --vh CSS variable to 1% of the VISUAL viewport height.
+      // This is the visible area after the browser chrome (URL bar etc.)
+      // is accounted for. Differs from window.innerHeight on mobile.
+      const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+
+    // Update on resize (orientation changes, URL bar show/hide)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        setVhVariable();
+        // When keyboard opens on iOS, scroll the active input into view.
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'INPUT')) {
+          setTimeout(() => activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 100);
+        }
+      });
+      window.visualViewport.addEventListener('scroll', setVhVariable);
+    } else {
+      window.addEventListener('resize', setVhVariable);
+    }
+
+    // Also update on orientation change (delay to let browser finish rotating)
+    window.addEventListener('orientationchange', () => {
+      setTimeout(setVhVariable, 200);
+      // Re-scroll messages to bottom after rotation
+      setTimeout(scrollToBottom, 250);
+    });
+
+    // Run once immediately on load
+    setVhVariable();
 
     // ═══════════════════════════════════════════════════════
     // INIT — Check existing Supabase session on page load
