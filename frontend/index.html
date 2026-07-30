@@ -1172,8 +1172,8 @@
        AUTH OVERLAY (Modal Login/Register/Forgot/Reset)
   ════════════════════════════════════════════════════════ -->
   <div id="authOverlay">
-    <!-- LOGIN VIEW -->
-    <div class="auth-card" id="loginView">
+    <!-- LOGIN VIEW FORM -->
+    <form class="auth-card" id="loginView" onsubmit="event.preventDefault(); doLogin();">
       <div class="auth-brand">
         <div class="auth-logo">UIT</div>
         <div class="auth-brand-text">
@@ -1187,7 +1187,7 @@
         <div class="auth-subtitle">Chào mừng trở lại! Nhập tài khoản của bạn.</div>
       </div>
 
-      <button class="google-btn" id="googleLoginBtn" onclick="signInWithGoogle()">
+      <button type="button" class="google-btn" id="googleLoginBtn" onclick="signInWithGoogle()">
         <svg width="18" height="18" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -1202,24 +1202,24 @@
       <div id="loginError" class="auth-error"></div>
       <div class="form-group">
         <label>Email</label>
-        <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email">
+        <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email" required>
       </div>
       <div class="form-group">
         <div class="form-label-row">
           <label>Mật khẩu</label>
-          <a class="forgot-link" onclick="showForgot()">Quên mật khẩu?</a>
+          <a type="button" class="forgot-link" onclick="showForgot()">Quên mật khẩu?</a>
         </div>
-        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" required>
       </div>
-      <button class="auth-btn" id="loginBtn" onclick="doLogin()">Đăng nhập</button>
+      <button type="submit" class="auth-btn" id="loginBtn">Đăng nhập</button>
 
       <div class="auth-switch">
         Chưa có tài khoản? <a onclick="showRegister()">Đăng ký miễn phí</a>
       </div>
-    </div>
+    </form>
 
-    <!-- REGISTER VIEW -->
-    <div class="auth-card" id="registerView" style="display:none">
+    <!-- REGISTER VIEW FORM -->
+    <form class="auth-card" id="registerView" onsubmit="event.preventDefault(); doRegister();" style="display:none">
       <div class="auth-brand">
         <div class="auth-logo">UIT</div>
         <div class="auth-brand-text">
@@ -1233,7 +1233,7 @@
         <div class="auth-subtitle">Tham gia để lưu lịch sử hội thoại của bạn.</div>
       </div>
 
-      <button class="google-btn" onclick="signInWithGoogle()">
+      <button type="button" class="google-btn" onclick="signInWithGoogle()">
         <svg width="18" height="18" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
           <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -1249,21 +1249,21 @@
       <div id="registerSuccess" class="auth-error" style="display:none;background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.25);color:#86efac;"></div>
       <div class="form-group">
         <label>Email</label>
-        <input type="email" id="registerEmail" placeholder="your@email.com" autocomplete="email">
+        <input type="email" id="registerEmail" placeholder="your@email.com" autocomplete="email" required>
       </div>
       <div class="form-group">
         <label>Mật khẩu (tối thiểu 6 ký tự)</label>
-        <input type="password" id="registerPassword" placeholder="••••••••" autocomplete="new-password" onkeydown="if(event.key==='Enter')doRegister()">
+        <input type="password" id="registerPassword" placeholder="••••••••" autocomplete="new-password" required>
       </div>
-      <button class="auth-btn" id="registerBtn" onclick="doRegister()">Tạo tài khoản</button>
+      <button type="submit" class="auth-btn" id="registerBtn">Tạo tài khoản</button>
 
       <div class="auth-switch">
         Đã có tài khoản? <a onclick="showLogin()">Đăng nhập</a>
       </div>
-    </div>
+    </form>
 
-    <!-- FORGOT PASSWORD VIEW -->
-    <div class="auth-card" id="forgotView" style="display:none">
+    <!-- FORGOT PASSWORD VIEW FORM -->
+    <form class="auth-card" id="forgotView" onsubmit="event.preventDefault(); doForgotPassword();" style="display:none">
       <div class="auth-brand">
         <div class="auth-logo">UIT</div>
         <div class="auth-brand-text">
@@ -1282,17 +1282,17 @@
 
       <div class="form-group">
         <label>Email đăng ký</label>
-        <input type="email" id="forgotEmail" placeholder="your@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')doForgotPassword()">
+        <input type="email" id="forgotEmail" placeholder="your@email.com" autocomplete="email" required>
       </div>
-      <button class="auth-btn" id="forgotBtn" onclick="doForgotPassword()">Gửi liên kết khôi phục</button>
+      <button type="submit" class="auth-btn" id="forgotBtn">Gửi liên kết khôi phục</button>
 
       <div class="auth-switch">
         Nhớ mật khẩu? <a onclick="showLogin()">Quay lại Đăng nhập</a>
       </div>
-    </div>
+    </form>
 
-    <!-- RESET PASSWORD VIEW -->
-    <div class="auth-card" id="resetPasswordView" style="display:none">
+    <!-- RESET PASSWORD VIEW FORM -->
+    <form class="auth-card" id="resetPasswordView" onsubmit="event.preventDefault(); doResetPassword();" style="display:none">
       <div class="auth-brand">
         <div class="auth-logo">UIT</div>
         <div class="auth-brand-text">
@@ -1310,10 +1310,10 @@
 
       <div class="form-group">
         <label>Mật khẩu mới (tối thiểu 6 ký tự)</label>
-        <input type="password" id="newPasswordInput" placeholder="••••••••" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetPassword()">
+        <input type="password" id="newPasswordInput" placeholder="••••••••" autocomplete="new-password" required>
       </div>
-      <button class="auth-btn" id="resetPasswordBtn" onclick="doResetPassword()">Cập nhật mật khẩu</button>
-    </div>
+      <button type="submit" class="auth-btn" id="resetPasswordBtn">Cập nhật mật khẩu</button>
+    </form>
   </div>
 
   <!-- ═══════════════════════════════════════════════════════
@@ -1528,6 +1528,16 @@
       document.getElementById('registerView').style.display = 'none';
       document.getElementById('forgotView').style.display = 'none';
       document.getElementById('resetPasswordView').style.display = 'none';
+
+      // Reset messages
+      ['loginError', 'registerError', 'forgotError', 'resetPasswordError'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = ''; el.classList.remove('visible'); }
+      });
+      ['registerSuccess', 'forgotSuccess'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = ''; el.style.display = 'none'; }
+      });
     }
 
     function showLogin() {
@@ -1552,91 +1562,149 @@
     }
 
     async function signInWithGoogle() {
-      const { error } = await supabaseClient.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin }
-      });
-      if (error) showAuthError('loginError', error.message);
+      try {
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+          provider: 'google',
+          options: { redirectTo: window.location.origin }
+        });
+        if (error) showAuthError('loginError', mapAuthError(error.message));
+      } catch (err) {
+        showAuthError('loginError', 'Lỗi Google Sign-in: ' + (err.message || err));
+      }
     }
 
     async function doLogin() {
       const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
       const btn = document.getElementById('loginBtn');
-      if (!email || !password) return showAuthError('loginError', 'Vui lòng nhập đầy đủ email và mật khẩu.');
-      btn.disabled = true; btn.textContent = 'Đang đăng nhập...';
-      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      btn.disabled = false; btn.textContent = 'Đăng nhập';
-      if (error) return showAuthError('loginError', mapAuthError(error.message));
-      onLoginSuccess(data.user, data.session.access_token);
+      
+      if (!email || !password) {
+        return showAuthError('loginError', 'Vui lòng nhập đầy đủ email và mật khẩu.');
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Đang đăng nhập...';
+      document.getElementById('loginError').classList.remove('visible');
+
+      try {
+        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        btn.disabled = false;
+        btn.textContent = 'Đăng nhập';
+
+        if (error) {
+          return showAuthError('loginError', mapAuthError(error.message));
+        }
+
+        if (!data || !data.session || !data.session.access_token) {
+          return showAuthError('loginError', 'Không thể tạo phiên đăng nhập. Vui lòng thử lại.');
+        }
+
+        onLoginSuccess(data.user, data.session.access_token);
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Đăng nhập';
+        showAuthError('loginError', 'Lỗi kết nối đăng nhập: ' + (err.message || err));
+      }
     }
 
     async function doRegister() {
       const email = document.getElementById('registerEmail').value.trim();
       const password = document.getElementById('registerPassword').value;
       const btn = document.getElementById('registerBtn');
+
       if (!email || !password) return showAuthError('registerError', 'Vui lòng nhập đầy đủ thông tin.');
       if (password.length < 6) return showAuthError('registerError', 'Mật khẩu tối thiểu 6 ký tự.');
-      btn.disabled = true; btn.textContent = 'Đang tạo tài khoản...';
-      
-      const { data, error } = await supabaseClient.auth.signUp({ email, password });
-      btn.disabled = false; btn.textContent = 'Tạo tài khoản';
-      
-      if (error) return showAuthError('registerError', mapAuthError(error.message));
-      
-      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-        return showAuthError('registerError', '⚠️ Email này đã được đăng ký tài khoản. Vui lòng chuyển sang Đăng nhập hoặc Quên mật khẩu.');
-      }
 
-      if (data.session) {
-        onLoginSuccess(data.user, data.session.access_token);
-        return;
-      }
-
-      const successEl = document.getElementById('registerSuccess');
-      successEl.style.display = 'block';
-      successEl.textContent = '✅ Đã đăng ký thành công! Bạn có thể chuyển sang Đăng nhập ngay.';
+      btn.disabled = true;
+      btn.textContent = 'Đang tạo tài khoản...';
       document.getElementById('registerError').classList.remove('visible');
+      document.getElementById('registerSuccess').style.display = 'none';
+
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        btn.disabled = false;
+        btn.textContent = 'Tạo tài khoản';
+
+        if (error) return showAuthError('registerError', mapAuthError(error.message));
+
+        if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          return showAuthError('registerError', '⚠️ Email này đã được đăng ký tài khoản. Vui lòng chuyển sang Đăng nhập hoặc Quên mật khẩu.');
+        }
+
+        if (data.session) {
+          onLoginSuccess(data.user, data.session.access_token);
+          return;
+        }
+
+        const successEl = document.getElementById('registerSuccess');
+        successEl.style.display = 'block';
+        successEl.textContent = '✅ Đã đăng ký thành công! Bạn có thể chuyển sang Đăng nhập ngay.';
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Tạo tài khoản';
+        showAuthError('registerError', 'Lỗi tạo tài khoản: ' + (err.message || err));
+      }
     }
 
     async function doForgotPassword() {
       const email = document.getElementById('forgotEmail').value.trim();
       const btn = document.getElementById('forgotBtn');
       if (!email) return showAuthError('forgotError', 'Vui lòng nhập email của bạn.');
-      btn.disabled = true; btn.textContent = 'Đang gửi...';
-      
-      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin
-      });
-      btn.disabled = false; btn.textContent = 'Gửi liên kết khôi phục';
-      
-      if (error) return showAuthError('forgotError', mapAuthError(error.message));
-      
-      const successEl = document.getElementById('forgotSuccess');
-      successEl.style.display = 'block';
-      successEl.textContent = '✅ Đã gửi hướng dẫn khôi phục! Vui lòng kiểm tra hộp thư của bạn (cả thư mục Spam/Rác).';
+
+      btn.disabled = true;
+      btn.textContent = 'Đang gửi...';
       document.getElementById('forgotError').classList.remove('visible');
+      document.getElementById('forgotSuccess').style.display = 'none';
+
+      try {
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin
+        });
+        btn.disabled = false;
+        btn.textContent = 'Gửi liên kết khôi phục';
+
+        if (error) return showAuthError('forgotError', mapAuthError(error.message));
+
+        const successEl = document.getElementById('forgotSuccess');
+        successEl.style.display = 'block';
+        successEl.textContent = '✅ Đã gửi hướng dẫn khôi phục! Vui lòng kiểm tra hộp thư của bạn (cả thư mục Spam/Rác).';
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Gửi liên kết khôi phục';
+        showAuthError('forgotError', 'Lỗi khôi phục: ' + (err.message || err));
+      }
     }
 
     async function doResetPassword() {
       const newPassword = document.getElementById('newPasswordInput').value;
       const btn = document.getElementById('resetPasswordBtn');
       if (!newPassword || newPassword.length < 6) return showAuthError('resetPasswordError', 'Mật khẩu mới tối thiểu 6 ký tự.');
-      btn.disabled = true; btn.textContent = 'Đang cập nhật...';
-      
-      const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword });
-      btn.disabled = false; btn.textContent = 'Cập nhật mật khẩu';
-      
-      if (error) return showAuthError('resetPasswordError', error.message);
-      
-      showToast('✅ Đã cập nhật mật khẩu mới thành công!');
-      const session = (await supabaseClient.auth.getSession()).data.session;
-      if (session) onLoginSuccess(session.user, session.access_token);
-      else showLogin();
+
+      btn.disabled = true;
+      btn.textContent = 'Đang cập nhật...';
+
+      try {
+        const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword });
+        btn.disabled = false;
+        btn.textContent = 'Cập nhật mật khẩu';
+
+        if (error) return showAuthError('resetPasswordError', mapAuthError(error.message));
+
+        showToast('✅ Đã cập nhật mật khẩu mới thành công!');
+        const session = (await supabaseClient.auth.getSession()).data.session;
+        if (session) onLoginSuccess(session.user, session.access_token);
+        else showLogin();
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Cập nhật mật khẩu';
+        showAuthError('resetPasswordError', 'Lỗi cập nhật mật khẩu: ' + (err.message || err));
+      }
     }
 
     async function doLogout() {
-      await supabaseClient.auth.signOut();
+      try {
+        await supabaseClient.auth.signOut();
+      } catch (e) { console.error(e); }
       currentUser = null; authToken = null; currentSessionId = null; allSessions = [];
       document.getElementById('authOverlay').classList.remove('hidden');
       showLogin();
@@ -1646,10 +1714,14 @@
 
     function showAuthError(elId, msg) {
       const el = document.getElementById(elId);
-      el.textContent = msg; el.classList.add('visible');
+      if (el) {
+        el.textContent = msg;
+        el.classList.add('visible');
+      }
     }
 
     function mapAuthError(msg) {
+      if (!msg) return 'Đã xảy ra lỗi không xác định.';
       if (msg.includes('Invalid login credentials')) return 'Email hoặc mật khẩu không đúng.';
       if (msg.includes('Email not confirmed')) return 'Vui lòng xác nhận email trước khi đăng nhập.';
       if (msg.includes('already registered') || msg.includes('already been registered')) return 'Email này đã được đăng ký. Vui lòng chuyển sang Đăng nhập.';
@@ -1657,9 +1729,10 @@
     }
 
     function onLoginSuccess(user, token) {
+      if (!user || !token) return;
       currentUser = user;
       authToken = token;
-      document.getElementById('userEmailDisplay').textContent = user.email;
+      document.getElementById('userEmailDisplay').textContent = user.email || 'User';
       document.getElementById('userAvatarInitial').textContent = (user.email || 'U')[0].toUpperCase();
       document.getElementById('authOverlay').classList.add('hidden');
       loadSessions();
@@ -1675,6 +1748,12 @@
     async function loadSessions() {
       try {
         const res = await fetch(`${BACKEND_URL}/api/v1/sessions`, { headers: apiHeaders() });
+        if (res.status === 401) {
+          // Stale/expired token — trigger clean logout to prompt re-login
+          showToast('🔒 Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.');
+          await doLogout();
+          return;
+        }
         if (!res.ok) return;
         const { sessions } = await res.json();
         allSessions = sessions || [];
@@ -2099,15 +2178,22 @@
     // INIT — Check existing Supabase session on page load
     // ═══════════════════════════════════════════════════════
     (async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        onLoginSuccess(session.user, session.access_token);
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
+          onLoginSuccess(session.user, session.access_token);
+        }
+      } catch (e) {
+        console.error('Session get error:', e);
       }
+
       supabaseClient.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
           showResetPassword();
-        } else if (session) {
+        } else if (event === 'SIGNED_IN' && session) {
           onLoginSuccess(session.user, session.access_token);
+        } else if (event === 'SIGNED_OUT') {
+          doLogout();
         }
       });
     })();
