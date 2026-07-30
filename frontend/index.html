@@ -94,7 +94,7 @@
     }
 
     /* ═══════════════════════════════════════════════════════
-       AUTH OVERLAY — Login / Register screens
+       AUTH OVERLAY — Login / Register / Forgot Password screens
     ════════════════════════════════════════════════════════ */
     #authOverlay {
       position: fixed;
@@ -107,6 +107,7 @@
       backdrop-filter: blur(24px);
       padding: 1rem;
       transition: opacity 0.35s ease;
+      overflow-y: auto;
     }
 
     #authOverlay.hidden {
@@ -117,7 +118,7 @@
     .auth-card {
       width: 100%;
       max-width: 420px;
-      background: rgba(15, 23, 42, 0.85);
+      background: rgba(15, 23, 42, 0.9);
       border: 1px solid rgba(56, 189, 248, 0.25);
       border-radius: 20px;
       padding: 2.25rem 2rem;
@@ -167,15 +168,24 @@
       color: var(--text-muted);
     }
 
+    .auth-header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
     .auth-title {
       font-size: 1.4rem;
       font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.2;
     }
 
     .auth-subtitle {
       font-size: 0.84rem;
       color: var(--text-muted);
-      margin-top: -0.8rem;
+      line-height: 1.45;
+      margin-top: 0;
     }
 
     .form-group {
@@ -184,10 +194,27 @@
       gap: 0.4rem;
     }
 
+    .form-label-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
     .form-group label {
       font-size: 0.8rem;
       font-weight: 600;
       color: var(--text-sub);
+    }
+
+    .forgot-link {
+      font-size: 0.78rem;
+      color: var(--accent-primary);
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .forgot-link:hover {
+      text-decoration: underline;
     }
 
     .form-group input {
@@ -277,6 +304,7 @@
       font-size: 0.82rem;
       color: #fca5a5;
       display: none;
+      line-height: 1.4;
     }
 
     .auth-error.visible {
@@ -491,7 +519,6 @@
       cursor: pointer;
       transition: all 0.15s ease;
       border: 1px solid transparent;
-      group: relative;
     }
     .session-item:hover {
       background: rgba(56, 189, 248, 0.06);
@@ -623,7 +650,7 @@
       color: #fca5a5;
     }
 
-    /* Quick Suggestions inside Sidebar */
+    /* Quick Suggestions Accordion */
     .quick-questions {
       display: flex;
       flex-direction: column;
@@ -1064,7 +1091,7 @@
 
     @media (max-width: 640px) {
       .pipeline-tags {
-        display: none; /* Hiển thị gọn hơn trên mobile nhỏ */
+        display: none;
       }
       .bubble-wrapper {
         max-width: 90%;
@@ -1093,7 +1120,7 @@
   <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar(false)"></div>
 
   <!-- ═══════════════════════════════════════════════════════
-       AUTH OVERLAY (Modal Login/Register)
+       AUTH OVERLAY (Modal Login/Register/Forgot/Reset)
   ════════════════════════════════════════════════════════ -->
   <div id="authOverlay">
     <!-- LOGIN VIEW -->
@@ -1106,7 +1133,7 @@
         </div>
       </div>
 
-      <div>
+      <div class="auth-header-text">
         <div class="auth-title">Đăng nhập</div>
         <div class="auth-subtitle">Chào mừng trở lại! Nhập tài khoản của bạn.</div>
       </div>
@@ -1129,7 +1156,10 @@
         <input type="email" id="loginEmail" placeholder="your@email.com" autocomplete="email">
       </div>
       <div class="form-group">
-        <label>Mật khẩu</label>
+        <div class="form-label-row">
+          <label>Mật khẩu</label>
+          <a class="forgot-link" onclick="showForgot()">Quên mật khẩu?</a>
+        </div>
         <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="auth-btn" id="loginBtn" onclick="doLogin()">Đăng nhập</button>
@@ -1149,7 +1179,7 @@
         </div>
       </div>
 
-      <div>
+      <div class="auth-header-text">
         <div class="auth-title">Đăng ký</div>
         <div class="auth-subtitle">Tham gia để lưu lịch sử hội thoại của bạn.</div>
       </div>
@@ -1181,6 +1211,59 @@
       <div class="auth-switch">
         Đã có tài khoản? <a onclick="showLogin()">Đăng nhập</a>
       </div>
+    </div>
+
+    <!-- FORGOT PASSWORD VIEW -->
+    <div class="auth-card" id="forgotView" style="display:none">
+      <div class="auth-brand">
+        <div class="auth-logo">UIT</div>
+        <div class="auth-brand-text">
+          <h1>UIT Academic AI</h1>
+          <p>Khôi phục mật khẩu</p>
+        </div>
+      </div>
+
+      <div class="auth-header-text">
+        <div class="auth-title">Quên mật khẩu</div>
+        <div class="auth-subtitle">Nhập email tài khoản của bạn để nhận liên kết khôi phục.</div>
+      </div>
+
+      <div id="forgotError" class="auth-error"></div>
+      <div id="forgotSuccess" class="auth-error" style="display:none;background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.25);color:#86efac;"></div>
+
+      <div class="form-group">
+        <label>Email đăng ký</label>
+        <input type="email" id="forgotEmail" placeholder="your@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')doForgotPassword()">
+      </div>
+      <button class="auth-btn" id="forgotBtn" onclick="doForgotPassword()">Gửi liên kết khôi phục</button>
+
+      <div class="auth-switch">
+        Nhớ mật khẩu? <a onclick="showLogin()">Quay lại Đăng nhập</a>
+      </div>
+    </div>
+
+    <!-- RESET PASSWORD VIEW (Triggered when user clicks email recovery link) -->
+    <div class="auth-card" id="resetPasswordView" style="display:none">
+      <div class="auth-brand">
+        <div class="auth-logo">UIT</div>
+        <div class="auth-brand-text">
+          <h1>UIT Academic AI</h1>
+          <p>Cập nhật mật khẩu mới</p>
+        </div>
+      </div>
+
+      <div class="auth-header-text">
+        <div class="auth-title">Đổi mật khẩu mới</div>
+        <div class="auth-subtitle">Vui lòng nhập mật khẩu mới cho tài khoản của bạn.</div>
+      </div>
+
+      <div id="resetPasswordError" class="auth-error"></div>
+
+      <div class="form-group">
+        <label>Mật khẩu mới (tối thiểu 6 ký tự)</label>
+        <input type="password" id="newPasswordInput" placeholder="••••••••" autocomplete="new-password" onkeydown="if(event.key==='Enter')doResetPassword()">
+      </div>
+      <button class="auth-btn" id="resetPasswordBtn" onclick="doResetPassword()">Cập nhật mật khẩu</button>
     </div>
   </div>
 
@@ -1229,7 +1312,7 @@
 
     <!-- Quick Suggestions Accordion -->
     <details style="margin-top:auto;">
-      <summary style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);cursor:pointer;padding:0.3rem 0;list-style:none;display:flex;align-items:center;justify-space-between;">
+      <summary style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted);cursor:pointer;padding:0.3rem 0;list-style:none;display:flex;align-items:center;justify-content:space-between;">
         💡 Câu hỏi mẫu nhanh <span>▼</span>
       </summary>
       <div class="quick-questions" style="margin-top:0.4rem;">
@@ -1370,10 +1453,35 @@
     }
 
     // ═══════════════════════════════════════════════════════
-    // AUTHENTICATION
+    // AUTHENTICATION & VIEWS
     // ═══════════════════════════════════════════════════════
-    function showLogin() { document.getElementById('loginView').style.display = ''; document.getElementById('registerView').style.display = 'none'; }
-    function showRegister() { document.getElementById('loginView').style.display = 'none'; document.getElementById('registerView').style.display = ''; }
+    function hideAllAuthViews() {
+      document.getElementById('loginView').style.display = 'none';
+      document.getElementById('registerView').style.display = 'none';
+      document.getElementById('forgotView').style.display = 'none';
+      document.getElementById('resetPasswordView').style.display = 'none';
+    }
+
+    function showLogin() {
+      hideAllAuthViews();
+      document.getElementById('loginView').style.display = '';
+    }
+
+    function showRegister() {
+      hideAllAuthViews();
+      document.getElementById('registerView').style.display = '';
+    }
+
+    function showForgot() {
+      hideAllAuthViews();
+      document.getElementById('forgotView').style.display = '';
+    }
+
+    function showResetPassword() {
+      hideAllAuthViews();
+      document.getElementById('resetPasswordView').style.display = '';
+      document.getElementById('authOverlay').classList.remove('hidden');
+    }
 
     async function signInWithGoogle() {
       const { error } = await supabaseClient.auth.signInWithOAuth({
@@ -1402,24 +1510,69 @@
       if (!email || !password) return showAuthError('registerError', 'Vui lòng nhập đầy đủ thông tin.');
       if (password.length < 6) return showAuthError('registerError', 'Mật khẩu tối thiểu 6 ký tự.');
       btn.disabled = true; btn.textContent = 'Đang tạo tài khoản...';
+      
       const { data, error } = await supabaseClient.auth.signUp({ email, password });
       btn.disabled = false; btn.textContent = 'Tạo tài khoản';
+      
       if (error) return showAuthError('registerError', mapAuthError(error.message));
       
+      // Kiểm tra nếu email đã tồn tại (Supabase trả về identities rỗng)
+      if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        return showAuthError('registerError', '⚠️ Email này đã được đăng ký tài khoản. Vui lòng chuyển sang Đăng nhập hoặc Quên mật khẩu.');
+      }
+
       if (data.session) {
         onLoginSuccess(data.user, data.session.access_token);
         return;
       }
+
       const successEl = document.getElementById('registerSuccess');
       successEl.style.display = 'block';
-      successEl.textContent = '✅ Đã đăng ký! Vui lòng kiểm tra hộp thư (cả thư mục Spam/Rác) hoặc đăng nhập trực tiếp.';
+      successEl.textContent = '✅ Đã đăng ký thành công! Bạn có thể chuyển sang Đăng nhập ngay.';
       document.getElementById('registerError').classList.remove('visible');
+    }
+
+    async function doForgotPassword() {
+      const email = document.getElementById('forgotEmail').value.trim();
+      const btn = document.getElementById('forgotBtn');
+      if (!email) return showAuthError('forgotError', 'Vui lòng nhập email của bạn.');
+      btn.disabled = true; btn.textContent = 'Đang gửi...';
+      
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin
+      });
+      btn.disabled = false; btn.textContent = 'Gửi liên kết khôi phục';
+      
+      if (error) return showAuthError('forgotError', mapAuthError(error.message));
+      
+      const successEl = document.getElementById('forgotSuccess');
+      successEl.style.display = 'block';
+      successEl.textContent = '✅ Đã gửi hướng dẫn khôi phục! Vui lòng kiểm tra hộp thư của bạn (cả thư mục Spam/Rác).';
+      document.getElementById('forgotError').classList.remove('visible');
+    }
+
+    async function doResetPassword() {
+      const newPassword = document.getElementById('newPasswordInput').value;
+      const btn = document.getElementById('resetPasswordBtn');
+      if (!newPassword || newPassword.length < 6) return showAuthError('resetPasswordError', 'Mật khẩu mới tối thiểu 6 ký tự.');
+      btn.disabled = true; btn.textContent = 'Đang cập nhật...';
+      
+      const { data, error } = await supabaseClient.auth.updateUser({ password: newPassword });
+      btn.disabled = false; btn.textContent = 'Cập nhật mật khẩu';
+      
+      if (error) return showAuthError('resetPasswordError', error.message);
+      
+      showToast('✅ Đã cập nhật mật khẩu mới thành công!');
+      const session = (await supabaseClient.auth.getSession()).data.session;
+      if (session) onLoginSuccess(session.user, session.access_token);
+      else showLogin();
     }
 
     async function doLogout() {
       await supabaseClient.auth.signOut();
       currentUser = null; authToken = null; currentSessionId = null; allSessions = [];
       document.getElementById('authOverlay').classList.remove('hidden');
+      showLogin();
       messagesArea.innerHTML = '';
       document.getElementById('sessionContainer').innerHTML = '<div style="font-size:0.78rem;color:var(--text-muted);padding:0.5rem;text-align:center;">Đang tải...</div>';
     }
@@ -1432,7 +1585,7 @@
     function mapAuthError(msg) {
       if (msg.includes('Invalid login credentials')) return 'Email hoặc mật khẩu không đúng.';
       if (msg.includes('Email not confirmed')) return 'Vui lòng xác nhận email trước khi đăng nhập.';
-      if (msg.includes('already registered')) return 'Email này đã được đăng ký. Vui lòng đăng nhập.';
+      if (msg.includes('already registered') || msg.includes('already been registered')) return 'Email này đã được đăng ký. Vui lòng chuyển sang Đăng nhập.';
       return msg;
     }
 
@@ -1583,12 +1736,10 @@
       const newTitle = inp.value.trim() || 'Cuộc trò chuyện mới';
       editingSessionId = null;
 
-      // Update local state immediately
       const sess = allSessions.find(s => s.id === sessionId);
       if (sess) sess.title = newTitle;
       renderSessions(allSessions);
 
-      // Save to Supabase DB
       try {
         await fetch(`${BACKEND_URL}/api/v1/sessions/${sessionId}`, {
           method: 'PATCH',
@@ -1704,7 +1855,6 @@
 
       appendMessage('user', text);
 
-      // Bot Message Container
       const botRow = document.createElement('div');
       botRow.className = 'message-row bot';
       const avatar = document.createElement('div');
@@ -1796,7 +1946,6 @@
                 }
                 bubble.innerHTML = marked.parse(botResponseText) + metaHtml;
 
-                // Action Bar (Copy Button)
                 const actionsBar = document.createElement('div');
                 actionsBar.className = 'message-actions';
                 actionsBar.innerHTML = `
@@ -1887,8 +2036,10 @@
       if (session) {
         onLoginSuccess(session.user, session.access_token);
       }
-      supabaseClient.auth.onAuthStateChange((_event, session) => {
-        if (session) {
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          showResetPassword();
+        } else if (session) {
           onLoginSuccess(session.user, session.access_token);
         }
       });
