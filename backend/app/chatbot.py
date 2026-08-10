@@ -282,26 +282,51 @@ def multi_query_generator(original_query):
     
     # Trả về danh sách gồm câu gốc + 3 câu nội suy
     return [original_query] + variants
-# --- BỘ ĐỊNH TUYẾN (SEMANTIC ROUTER) ---
+# --- BỘ ĐỊNH TUYẾN (SEMANTIC ROUTER) —— 3 nhãn ---
 class RouteQuery(BaseModel):
     """Định tuyến câu hỏi của người dùng tới đúng bộ phận xử lý."""
     datasource: str = Field(
-        description="Chọn 'vectorstore' nếu câu hỏi liên quan đến quy chế, học vụ, điểm số, đồ án, tốt nghiệp, học bổng của UIT. Chọn 'direct' nếu là câu chào hỏi, giao tiếp thông thường hoặc câu hỏi ngoài luồng."
+        description="""
+        Chọn ĐÚNG MỘT trong ba nhãn sau:
+        - 'vectorstore' : Câu hỏi liên quan đến quy chế, học vụ, điểm số, học bổng, đồ án, tốt nghiệp, học phí, chứng chỉ ngoại ngữ, thủ tục hành chính của UIT.
+        - 'direct'      : Câu chào hỏi (hello, chào bạn, cảm ơn), hỏi danh tính bot, khen ngợi, hoặc giao tiếp thông thường không cần tra cứu quy chế.
+        - 'out_of_domain': Câu hỏi hoàn toàn ngoài phạm vi học vụ UIT — ví dụ: lập trình, thời tiết, giá chứng khoán, nấu ăn, tin tức, câu đố, yêu cầu viết code, dịch thuật, v.v.
+        """
     )
 
 structured_llm_router = llm.with_structured_output(RouteQuery)
 
 system_router_prompt = """Bạn là chuyên gia phân luồng câu hỏi tối cao của trường Đại học CNTT (UIT).
-Nhiệm vụ của bạn là đọc câu hỏi của sinh viên và quyết định chính xác nó thuộc luồng nào:
+Nhiệm vụ của bạn là phân loại câu hỏi vào ĐÚNG MỘT trong ba luồng:
 
-1. Chọn 'vectorstore': Đối với TẤT CẢ các câu hỏi hỏi về luật lệ, quy chế, điều kiện, học phí, điểm số, chứng chỉ ngoại ngữ (IELTS, TOEIC), đồ án, khóa luận, cảnh cáo học vụ, buộc thôi học, hoặc bất kỳ quy định hành chính nào của UIT.
-2. Chọn 'direct': Chỉ dành cho lời chào hỏi (Chào bot, hello), khen ngợi/chửi bới, đặt tên riêng (Fancy), hỏi danh tính của bot, hoặc các câu hỏi hoàn toàn ngoài luồng không liên quan đến đại học (Giá Bitcoin, thời tiết, nấu ăn).
+1. Chọn 'vectorstore': TẤT CẢ các câu hỏi về quy chế, điều kiện học vụ, điểm số,
+   học phí, học bổng, chứng chỉ ngoại ngữ (IELTS/TOEIC/TOEFL), đồ án tốt nghiệp,
+   khóa luận, cảnh cáo học vụ, buộc thôi học, đăng ký học phần, xét tốt nghiệp,
+   thực tập, bảo lưu, rút môn, lịch thi, phòng đào tạo, bằng cấp UIT.
 
-🌟 VÍ DỤ MẪU ĐỂ BẠN HỌC THEO:
-- 'Yêu cầu IELTS để tốt nghiệp?' -> Chọn 'vectorstore' (Vì liên quan đến chứng chỉ ngoại ngữ tốt nghiệp)
-- 'Bị cảnh cáo học vụ thì sao?' -> Chọn 'vectorstore' (Vì liên quan đến chế tài học vụ)
-- 'Bạn tên là gì?' -> Chọn 'direct' (Vì hỏi danh tính)
-- 'Thôi học có được xét tốt nghiệp?' -> Chọn 'vectorstore' (Vì liên quan đến quy chế tốt nghiệp)
+2. Chọn 'direct': LỜI CHÀO HỎI ("chào bạn", "hello", "hi"), lời cảm ơn
+   ("cảm ơn", "thanks"), câu hỏi về danh tính bot ("bạn tên gì?", "bạn là ai?"),
+   lời khen hoặc phàn nàn về bot, hoặc câu nói giao tiếp xã giao đơn thuần.
+
+3. Chọn 'out_of_domain': Câu hỏi HOÀN TOÀN NGOÀI phạm vi học vụ UIT, gồm:
+   - Lập trình / viết code ("viết hàm Python", "debug JavaScript", "giải thích thuật toán")
+   - Thời tiết, tin tức, thể thao, giải trí
+   - Toán/vật lý/hóa học thuần túy không liên quan đến học vụ UIT
+   - Nấu ăn, du lịch, sức khỏe, tài chính cá nhân
+   - Câu đố vui, câu chuyện, thơ văn
+   - Yêu cầu dịch thuật, tóm tắt văn bản ngoài học vụ
+
+🌟 VÍ DỤ PHÂN LOẠI:
+- 'Học bổng KKHT điểm bao nhiêu mới đạt?' → 'vectorstore'
+- 'Bị cảnh cáo học vụ có bị đuổi học không?' → 'vectorstore'
+- 'Điều kiện làm đồ án tốt nghiệp?' → 'vectorstore'
+- 'Bạn tên là gì?' → 'direct'
+- 'Chào buổi sáng!' → 'direct'
+- 'Cảm ơn bạn đã giúp đỡ' → 'direct'
+- 'Viết cho tôi hàm quicksort bằng Python' → 'out_of_domain'
+- 'Giải thích cách hoạt động của blockchain' → 'out_of_domain'
+- 'Hôm nay thời tiết TP.HCM thế nào?' → 'out_of_domain'
+- 'Công thức nấu phở bò?' → 'out_of_domain'
 
 Câu hỏi cần phân luồng: {question}"""
 
@@ -589,97 +614,83 @@ def fallback_node(state: GraphState):
     print(f"   🛡️ [Safety] Đã hết {retry_count} lần thử - Chặn câu trả lời bịa đặt!")
     return {"answer": "Dựa trên quy chế hiện tại, tôi đã tìm thấy một vài tài liệu liên quan nhưng không thể đưa ra kết luận chắc chắn sau nhiều lần kiểm định. Để đảm bảo chính xác, bạn vui lòng liên hệ trực tiếp **Phòng Đào Tạo Đại học (P.ĐTĐH)** để được giải đáp chính thức."}
 
-# Node 5: Trạm Trả lời Trực tiếp (Không cần tìm kiếm)
-def direct_answer_node(state: GraphState):
+# ==========================================
+# NODE 5a: TRẠM TỪ CHỐI NGOÀI DOMAIN (Đề xuất 2)
+# ==========================================
+# Được kích hoạt khi Router xác định câu hỏi hoàn toàn ngoài phạm vi học vụ UIT
+# Ví dụ: yêu cầu viết code, hỏi thời tiết, câu đố vui, nấu ăn...
+OUT_OF_DOMAIN_SUGGESTIONS = [
+    "điều kiện học bổng KKHT",
+    "quy định cảnh cáo học vụ",
+    "điều kiện làm đồ án tốt nghiệp",
+    "yêu cầu chứng chỉ ngoại ngữ đầu ra",
+    "học phí và các khoản phí học vụ",
+]
+
+def out_of_domain_node(state: GraphState) -> dict:
+    print("🚫 [Out-of-Domain] Câu hỏi ngoài phạm vi học vụ UIT — Từ chối lịch sự.")
+    question = state["question"]
+    import random
+    suggestion = random.choice(OUT_OF_DOMAIN_SUGGESTIONS)
+    answer = (
+        f"Xin lỗi, tôi là **Trợ lý Học vụ AI của UIT** và chỉ được phép hỗ trợ "
+        f"các vấn đề liên quan đến **quy chế đào tạo, học vụ và thủ tục hành chính** "
+        f"của trường Đại học Công nghệ Thông tin (UIT).\n\n"
+        f"Câu hỏi của bạn nằm ngoài phạm vi tôi có thể hỗ trợ. "
+        f"Bạn có muốn hỏi về **{suggestion}** hoặc một chủ đề học vụ UIT khác không?"
+    )
+    return {"answer": answer, "documents": [], "question": question}
+
+
+# ==========================================
+# NODE 5b: TRẠM TRẢ LỜI TRỰC TIẾP — với Guardrail (Đề xuất 1)
+# ==========================================
+# Xử lý câu chào hỏi, giao tiếp thông thường, hỏi danh tính bot.
+# Guardrail: từ chối nếu phát hiện câu hỏi lẽ ra nên đi qua out_of_domain
+# nhưng router phân luồng sai (defense-in-depth).
+def direct_answer_node(state: GraphState) -> dict:
     print("--- TRẠM XỬ LÝ NHANH (KHÔNG DÙNG RAG) ---")
     question = state["question"]
     history = state.get("chat_history", [])
+
     history_str = ""
     for msg in history:
         history_str += f"{msg['role']}: {msg['content']}\n"
 
-    prompt = f"""Bạn là trợ lý học vụ UIT. Dựa vào lịch sử chat bên dưới, hãy trả lời câu hỏi tiếp theo một cách tự nhiên, mạch lạc, tránh lặp lại lời chào hỏi không cần thiết.
-    
-    Lịch sử cuộc trò chuyện:
-    {history_str}
-    
-    Câu hỏi mới nhất: {question}
-    Trả lời:"""
-    
-    history_block = ""
-    if history:
-        history_str = "\n".join(
-            f"{'Sinh viên' if m['role'] == 'user' else 'Bot'}: {m['content']}"
-            for m in history
-        )
-        history_block = f"\n[LỊCH SỬ HỘI THOẠI TRƯỚC ĐÓ]:\n{history_str}\n"
+    guardrail_prompt = f"""Bạn là Trợ lý Học vụ AI chuyên biệt của trường Đại học Công nghệ Thông tin (UIT).
 
-    # Prompt nghiêm khắc hơn, yêu cầu trích dẫn từng câu
-    strict_prompt = """
-    [CHẾ ĐỘ XÁC MINH NGHIÊM NGẶT - LẦN THỬ #{retry_count}]
-    Câu trả lời trước của bạn đã bị phát hiện có thể chứa thông tin không có căn cứ trong tài liệu.
-    Hãy viết lại câu trả lời với các ràng buộc SAU, KHÔNG ĐƯỢC BỎ QUA:
+PHẠM VI HỖ TRỢ: Bạn CHỈ được hỗ trợ các câu hỏi về quy chế đào tạo, học bổng, điểm số,
+đồ án tốt nghiệp, thủ tục hành chính và các vấn đề học vụ của UIT.
 
-    ✅ QUY TẮC BẮT BUỘC (NGHIÊM NGẶT HƠN):
-    1. CHỈ sử dụng các con số, điều kiện, mốc thời gian xuất hiện CHÍNH XÁC trong đoạn Context bên dưới.
-    2. Mỗi ý trong câu trả lời PHẢI có trích dẫn nguồn (Nguồn: [Điều ...] - [Tên văn bản]).
-    3. Nếu không tìm thấy thông tin cụ thể trong Context, hãy nói rõ "Quy chế không quy định cụ thể" thay vì tự suy diễn.
-    4. KHÔNG thêm bất kỳ thông tin nào ngoài Context, kể cả từ kiến thức nền.
+QUY TẮC PHẢN HỒI:
+1. Câu chào hỏi, giao tiếp xã giao ("chào bạn", "cảm ơn", "bạn là ai?"): Trả lời ngắn gọn, thân thiện.
+2. Câu hỏi về quy chế nhưng không đủ ngữ cảnh: Gợi ý sinh viên hỏi cụ thể hơn.
+3. Câu hỏi NGOÀI HỌC VỤ UIT (coding, thời tiết, nấu ăn...): Từ chối lịch sự và gợi ý
+   chủ đề học vụ liên quan. KHÔNG tự ý trả lời.
 
-    ---------------------
-    {history_block}
-    [NGỮ CẢNH HIỆN TẠI]:
-    {context}
+Lịch sử cuộc trò chuyện:
+{history_str}
 
-    [CÂU HỎI CỦA SINH VIÊN]:
-    {question}
-    """
+Câu hỏi mới nhất: {question}
+Trả lời:"""
 
-    prompt = ChatPromptTemplate.from_template(strict_prompt)
-    chain = prompt | llm | StrOutputParser()
-    answer = chain.invoke({
-        "context": context_text,
-        "question": question,
-        "history_block": history_block,
-        "retry_count": retry_count,
-    })
-    return {"answer": answer, "documents": documents, "question": question, "retry_count": retry_count}
-
-# Node 4b: Trạm An Toàn cuối cùng (Fallback sau khi đã retry hết lần)
-def fallback_node(state: GraphState):
-    retry_count = state.get("retry_count", 0)
-    print(f"   🛡️ [Safety] Đã hết {retry_count} lần thử - Chặn câu trả lời bịa đặt!")
-    return {"answer": "Dựa trên quy chế hiện tại, tôi đã tìm thấy một vài tài liệu liên quan nhưng không thể đưa ra kết luận chắc chắn sau nhiều lần kiểm định. Để đảm bảo chính xác, bạn vui lòng liên hệ trực tiếp **Phòng Đào Tạo Đại học (P.ĐTĐH)** để được giải đáp chính thức."}
-# Node 5: Trạm Trả lời Trực tiếp (Không cần tìm kiếm)
-def direct_answer_node(state: GraphState):
-    print("--- TRẠM XỬ LÝ NHANH (KHÔNG DÙNG RAG) ---")
-    question = state["question"]
-    history = state.get("chat_history", [])
-    history_str = ""
-    for msg in history:
-        history_str += f"{msg['role']}: {msg['content']}\n"
-
-    prompt = f"""Bạn là trợ lý học vụ UIT. Dựa vào lịch sử chat bên dưới, hãy trả lời câu hỏi tiếp theo một cách tự nhiên, mạch lạc, tránh lặp lại lời chào hỏi không cần thiết.
-    
-    Lịch sử cuộc trò chuyện:
-    {history_str}
-    
-    Câu hỏi mới nhất: {question}
-    Trả lời:"""
-    
-    response = llm.invoke(prompt)
+    response = llm.invoke(guardrail_prompt)
     return {"answer": response.content, "documents": [], "question": question}
 
-# Hàm logic của Cảnh sát giao thông (Đặt ở cửa START)
-def route_question(state: GraphState):
+# Hàm logic của Cảnh sát giao thông — 3 luồng (Đặt ở cửa START)
+def route_question(state: GraphState) -> str:
     print("🚦 [Router] Đang phân tích ý định của người dùng...")
     question_to_route = state.get("standalone_question", state["question"])
     source = question_router.invoke({"question": question_to_route})
-    
+
     if source.datasource == "vectorstore":
         print("   👉 Luồng RAG: Đang chuyển hướng đi tìm tài liệu...")
         return "vectorstore"
-    elif source.datasource == "direct":
+    elif source.datasource == "out_of_domain":
+        print("   🚫 Luồng Out-of-Domain: Câu hỏi ngoài phạm vi học vụ UIT.")
+        return "out_of_domain"
+    else:
+        # Bao gồm 'direct' và mọi nhãn không nhận dạng được (fallback an toàn)
         print("   👉 Luồng Direct: Chuyển hướng sang giao tiếp trực tiếp...")
         return "direct"
 
@@ -714,25 +725,39 @@ def check_hallucination_condition(state: GraphState):
 # ==========================================
 workflow = StateGraph(GraphState)
 
+# ==========================================
+# PHẦN 4: LẮP RÁP ĐỒ THỊ
+# Sơ đồ luồng:
+#
+#   START
+#     └─► reformulate
+#           └─► ambiguity_check
+#                 ├─► clarify         (câu hỏi mơ hồ → yêu cầu làm rõ)
+#                 ├─► retrieve        (học vụ UIT → pipeline RAG đầy đủ)
+#                 ├─► direct_answer   (chào hỏi / giao tiếp → trả lời trực tiếp)
+#                 └─► out_of_domain   (ngoài phạm vi → từ chối lịch sự) ← MỚI
+# ==========================================
+
 # 1. Đăng ký TẤT CẢ các Trạm
 workflow.add_node("reformulate", reformulate_node)
-workflow.add_node("ambiguity_check", ambiguity_check_node) # MỚI: Self-RAG
-workflow.add_node("clarify", clarify_node)                 # MỚI: Self-RAG
+workflow.add_node("ambiguity_check", ambiguity_check_node)   # Self-RAG
+workflow.add_node("clarify", clarify_node)                   # Self-RAG
 workflow.add_node("retrieve", retrieve_node)
 workflow.add_node("grade", grade_documents_node)
-workflow.add_node("web_search", web_search_node)           # MỚI: CRAG
+workflow.add_node("web_search", web_search_node)             # CRAG
 workflow.add_node("generate", generate_node)
 workflow.add_node("regenerate", regenerate_node)
 workflow.add_node("fallback", fallback_node)
-workflow.add_node("direct_answer", direct_answer_node)
+workflow.add_node("direct_answer", direct_answer_node)       # Guardrail (Đề xuất 1)
+workflow.add_node("out_of_domain", out_of_domain_node)       # Đề xuất 2 — MỚI
 workflow.add_node("no_context", no_context_node)
 
 # 2. Xây dựng đường đi
 workflow.add_edge(START, "reformulate")
 workflow.add_edge("reformulate", "ambiguity_check")
 
-# Self-RAG & Router: Đánh giá câu hỏi mơ hồ & Định tuyến
-def check_ambiguity_and_route(state: GraphState):
+# Self-RAG & Router: Đánh giá câu hỏi mơ hồ & Định tuyến 3 luồng
+def check_ambiguity_and_route(state: GraphState) -> str:
     if state.get("needs_clarification", False):
         return "clarify"
     return route_question(state)
@@ -744,6 +769,7 @@ workflow.add_conditional_edges(
         "clarify": "clarify",
         "vectorstore": "retrieve",
         "direct": "direct_answer",
+        "out_of_domain": "out_of_domain",   # MỚI: Đề xuất 2
     }
 )
 workflow.add_edge("clarify", END)
@@ -786,6 +812,7 @@ workflow.add_conditional_edges(
 workflow.add_edge("fallback", END)
 workflow.add_edge("no_context", END)
 workflow.add_edge("direct_answer", END)
+workflow.add_edge("out_of_domain", END)   # MỚI: Đề xuất 2
 
 # 3. Đóng gói hệ thống với Session Memory
 memory_checkpointer = MemorySaver()
