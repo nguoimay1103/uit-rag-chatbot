@@ -100,3 +100,10 @@ Baseline production ngày 2026-09-08 chạy 72 cases dùng 492,330 tokens, chi p
 Mỗi run tạo JSON và CSV có timestamp trong reports/system_benchmark. JSON chứa
 summary, kết quả gate và chi tiết từng case. Exit code là 1 khi gate không đạt,
 trừ khi dùng no-gate, nên runner có thể đưa vào CI sau khi chốt baseline.
+
+Để xuất bản một bản báo cáo đã loại generated answer, ground truth, judge reason
+và retrieved context:
+
+    python scripts/publish_benchmark.py reports/system_benchmark/benchmark-<timestamp>.json
+
+Các artifact công khai được tạo trong `docs/benchmark-results/`.
