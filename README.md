@@ -105,7 +105,8 @@ python scripts\evaluate.py --profile full --production-mode
 
 Benchmark full cần corpus private trong `data/raw`. Thiết kế metric, threshold và
 chi phí được mô tả trong [BENCHMARK.md](BENCHMARK.md). Baseline hiện tại nằm tại
-[docs/benchmark-baseline-v2.md](docs/benchmark-baseline-v2.md).
+[docs/benchmark-baseline-v2.md](docs/benchmark-baseline-v2.md), cùng
+[báo cáo public theo từng case](docs/benchmark-results/2026-09-08-full.md).
 
 ## Biến môi trường
 
