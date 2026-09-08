@@ -114,6 +114,7 @@ OPENAI_API_KEY            = sk-proj-...
 QDRANT_URL                = https://xxx.aws.cloud.qdrant.io
 QDRANT_API_KEY            = eyJhbGci...
 SUPABASE_URL              = https://xxx.supabase.co
+SUPABASE_ANON_KEY         = eyJhbGci...anon-public-key...
 SUPABASE_SERVICE_ROLE_KEY = eyJhbGci...
 SUPABASE_JWT_SECRET       = your-jwt-secret
 USE_RERANKER              = false
@@ -139,16 +140,12 @@ Sau deploy (~5 phút), truy cập:
 
 ## BƯỚC 3: Deploy Frontend lên Vercel (10 phút)
 
-### 3.1 — Cập nhật config trong `frontend/index.html`
+### 3.1 — Cấu hình frontend
 
-Thay 3 dòng placeholder (tìm `REPLACE_WITH`):
-
-```javascript
-const SUPABASE_URL  = 'https://YOUR_PROJECT_ID.supabase.co';
-const SUPABASE_ANON = 'eyJhbGci...YOUR_ANON_KEY...';
-// ...
-return 'https://uit-rag-backend.onrender.com';
-```
+Frontend lấy `SUPABASE_URL` và `SUPABASE_ANON_KEY` từ endpoint browser-safe
+`/api/v1/public-config`. Hai biến này phải được cấu hình trong Render; không
+hardcode JWT vào `frontend/index.html`. Chỉ URL backend production được khai báo
+trong frontend.
 
 ```bash
 git add frontend/index.html

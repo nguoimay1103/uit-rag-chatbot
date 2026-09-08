@@ -139,6 +139,22 @@ async def health():
     return {"status": "ok", "version": "2.0.0"}
 
 
+@app.get("/api/v1/public-config")
+async def public_config():
+    """Trả cấu hình browser-safe; tuyệt đối không trả service-role/JWT secret."""
+    supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
+    supabase_anon_key = os.getenv("SUPABASE_ANON_KEY", "")
+    if not supabase_url or not supabase_anon_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Public authentication configuration is unavailable.",
+        )
+    return {
+        "supabase_url": supabase_url,
+        "supabase_anon_key": supabase_anon_key,
+    }
+
+
 # ─── Session Management ──────────────────────────────────────────────────────
 
 @app.post("/api/v1/sessions")

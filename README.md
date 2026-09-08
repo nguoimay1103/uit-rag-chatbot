@@ -114,7 +114,7 @@ Sao chép `.env.example` và cấu hình các nhóm biến:
 - OpenAI: `OPENAI_API_KEY`.
 - Qdrant: `QDRANT_URL`, `QDRANT_API_KEY`.
 - Supabase: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
-  `SUPABASE_JWT_SECRET`.
+  `SUPABASE_JWT_SECRET`, `SUPABASE_ANON_KEY`.
 - Runtime: `ALLOWED_ORIGINS`, `USE_RERANKER`, `BM25_PATH`,
   `RAG_CORPUS_VERSION`.
 

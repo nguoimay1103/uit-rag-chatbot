@@ -24,6 +24,7 @@ services:
       # QDRANT_URL
       # QDRANT_API_KEY
       # SUPABASE_URL
+      # SUPABASE_ANON_KEY (public browser key; served via /api/v1/public-config)
       # SUPABASE_SERVICE_ROLE_KEY
       # SUPABASE_JWT_SECRET
       # ALLOWED_ORIGINS (Vercel domain của bạn)
