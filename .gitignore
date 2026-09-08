@@ -1,5 +1,6 @@
 ﻿.env
 *.env
+!.env.example
 bm25_retriever.pkl
 __pycache__/
 *.pyc
@@ -12,3 +13,8 @@ data/raw/
 reports/
 *.log
 .DS_Store
+.pytest_cache/
+.coverage
+htmlcov/
+.idea/
+.vscode/

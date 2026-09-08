@@ -15,6 +15,8 @@ services:
         value: "3.11.0"
       - key: USE_RERANKER
         value: "false"         # Tắt BAAI reranker để tiết kiệm RAM
+      - key: RAG_CORPUS_VERSION
+        value: "uit_admissions-v1"  # Tăng version sau mỗi lần re-index để invalidate cache
       - key: PORT
         value: "10000"
       # Các biến sau phải set thủ công trong Render Dashboard:
@@ -22,6 +24,7 @@ services:
       # QDRANT_URL
       # QDRANT_API_KEY
       # SUPABASE_URL
+      # SUPABASE_ANON_KEY (public browser key; served via /api/v1/public-config)
       # SUPABASE_SERVICE_ROLE_KEY
       # SUPABASE_JWT_SECRET
       # ALLOWED_ORIGINS (Vercel domain của bạn)

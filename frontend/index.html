@@ -1570,16 +1570,25 @@
     // ═══════════════════════════════════════════════════════
     // CONFIG & CONSTANTS
     // ═══════════════════════════════════════════════════════
-    const SUPABASE_URL = 'https://drlfmssbhccbpakmvyog.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRybGZtc3NiaGNjYnBha212eW9nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUyOTU0ODAsImV4cCI6MjEwMDg3MTQ4MH0.-6PLE4T4gRHEfEID-vQSLPZowJiIXqpEDv9cjTGgU_0';
-
     const BACKEND_URL = (() => {
       const h = window.location.hostname;
       if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:8000';
       return 'https://uit-rag-backend.onrender.com';
     })();
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+    let supabaseClient = null;
+
+    async function initializeSupabase() {
+      const response = await fetch(`${BACKEND_URL}/api/v1/public-config`);
+      if (!response.ok) {
+        throw new Error(`Không tải được cấu hình đăng nhập (${response.status})`);
+      }
+      const config = await response.json();
+      supabaseClient = window.supabase.createClient(
+        config.supabase_url,
+        config.supabase_anon_key,
+      );
+    }
 
     // ═══════════════════════════════════════════════════════
     // STATE
@@ -2244,17 +2253,23 @@
     // INIT — Check existing Supabase session on page load
     // ═══════════════════════════════════════════════════════
     (async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        onLoginSuccess(session.user, session.access_token);
-      }
-      supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (event === 'PASSWORD_RECOVERY') {
-          showResetPassword();
-        } else if (session) {
+      try {
+        await initializeSupabase();
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session) {
           onLoginSuccess(session.user, session.access_token);
         }
-      });
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+          if (event === 'PASSWORD_RECOVERY') {
+            showResetPassword();
+          } else if (session) {
+            onLoginSuccess(session.user, session.access_token);
+          }
+        });
+      } catch (error) {
+        console.error('Supabase initialization failed:', error);
+        showToast('Không thể tải cấu hình đăng nhập. Vui lòng thử lại sau.', 'error');
+      }
     })();
   </script>
 </body>

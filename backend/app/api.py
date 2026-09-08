@@ -19,6 +19,7 @@ from pydantic import BaseModel
 import uvicorn
 import json
 import asyncio
+import hashlib
 from typing import Optional
 
 # ─── Imports nội bộ ─────────────────────────────────────────────────────────
@@ -81,6 +82,24 @@ app.add_middleware(
 
 # ─── Semantic Cache ──────────────────────────────────────────────────────────
 semantic_cache = SemanticCache(embeddings_model=embeddings, threshold=0.95)
+RAG_CORPUS_VERSION = os.getenv("RAG_CORPUS_VERSION", "uit_admissions-v1")
+
+
+def _cache_context_key(history: list[dict]) -> str:
+    """Tạo namespace cache ổn định từ bốn message gần nhất."""
+    if not history:
+        return "root"
+    recent_history = [
+        {"role": message.get("role"), "content": message.get("content")}
+        for message in history[-4:]
+    ]
+    serialized = json.dumps(
+        recent_history,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 # ─── Pydantic Schemas ────────────────────────────────────────────────────────
 class ChatRequest(BaseModel):
@@ -118,6 +137,22 @@ async def root():
 @app.head("/health")
 async def health():
     return {"status": "ok", "version": "2.0.0"}
+
+
+@app.get("/api/v1/public-config")
+async def public_config():
+    """Trả cấu hình browser-safe; tuyệt đối không trả service-role/JWT secret."""
+    supabase_url = os.getenv("SUPABASE_URL", "").rstrip("/")
+    supabase_anon_key = os.getenv("SUPABASE_ANON_KEY", "")
+    if not supabase_url or not supabase_anon_key:
+        raise HTTPException(
+            status_code=503,
+            detail="Public authentication configuration is unavailable.",
+        )
+    return {
+        "supabase_url": supabase_url,
+        "supabase_anon_key": supabase_anon_key,
+    }
 
 
 # ─── Session Management ──────────────────────────────────────────────────────
@@ -195,23 +230,32 @@ async def chat_endpoint(
         session_id = _resolve_session(user["user_id"], request.session_id)
         print(f"📥 [{user['email']}] [{session_id}] Câu hỏi: {request.question}")
 
-        # Check cache
-        cached = semantic_cache.lookup(request.question)
+        # Lịch sử phải được lấy trước cache để follow-up không dùng nhầm câu trả
+        # lời của một ngữ cảnh hội thoại khác.
+        history = db.get_recent_messages_for_context(session_id, last_n=6)
+        cache_context = _cache_context_key(history)
+
+        # Check cache trong đúng conversation context và corpus version.
+        cached = semantic_cache.lookup(
+            request.question,
+            context_key=cache_context,
+            corpus_version=RAG_CORPUS_VERSION,
+        )
         if cached:
+            cached_confidence = round(cached.get("confidence_score", 0.0), 4)
             db.save_message(session_id, "user", request.question)
             db.save_message(session_id, "assistant", cached["answer"],
-                           confidence_score=1.0, docs_retrieved=cached["docs_count"])
+                           confidence_score=cached_confidence, docs_retrieved=cached["docs_count"])
+            if not history:
+                db.update_session_title(session_id, user["user_id"], request.question)
             db.touch_session(session_id)
             return ChatResponse(
                 answer=cached["answer"],
                 session_id=session_id,
                 documents_retrieved=cached["docs_count"],
-                confidence_score=1.0,
+                confidence_score=cached_confidence,
                 cache_hit=True,
             )
-
-        # Load lịch sử từ DB
-        history = db.get_recent_messages_for_context(session_id, last_n=6)
 
         config = {"configurable": {"thread_id": session_id}}
         result = rag_agent.invoke(
@@ -220,6 +264,13 @@ async def chat_endpoint(
                 "chat_history": history,
                 "retry_count": 0,
                 "confidence_score": 0.0,
+                "documents": [],
+                "answer": "",
+                "standalone_question": "",
+                "is_web_searched": False,
+                "needs_clarification": False,
+                "clarification_question": "",
+                "cacheable": True,
             },
             config=config,
         )
@@ -235,12 +286,18 @@ async def chat_endpoint(
         db.touch_session(session_id)
 
         # Cập nhật tiêu đề phiên nếu là tin nhắn đầu tiên
-        messages = db.get_session_messages(session_id, limit=2)
-        if len(messages) <= 2:
+        if not history:
             db.update_session_title(session_id, user["user_id"], request.question)
 
-        if num_docs > 0:
-            semantic_cache.store(request.question, final_answer, num_docs)
+        if num_docs > 0 and result.get("cacheable", True):
+            semantic_cache.store(
+                request.question,
+                final_answer,
+                num_docs,
+                confidence_score=confidence,
+                context_key=cache_context,
+                corpus_version=RAG_CORPUS_VERSION,
+            )
 
         return ChatResponse(
             answer=final_answer,
@@ -260,21 +317,33 @@ async def chat_stream_endpoint(
     user: dict = Depends(get_current_user),
 ):
     """
-    True Streaming Endpoint (Server-Sent Events).
-    Bơm từng token từ LLM realtime tới client.
+    Verified Streaming Endpoint (Server-Sent Events).
+
+    Toàn bộ LangGraph (bao gồm hallucination verification và retry/fallback)
+    phải hoàn tất trước khi nội dung câu trả lời được gửi tới client. Sau đó
+    chỉ câu trả lời cuối cùng đã được graph chấp nhận mới được stream.
     """
     session_id = _resolve_session(user["user_id"], request.session_id)
 
     async def event_generator():
+        rag_task = None
         try:
             # Gửi session_id về client ngay đầu để frontend lưu
             yield f"data: {json.dumps({'event': 'session', 'session_id': session_id}, ensure_ascii=False)}\n\n"
 
-            # 1. Check Semantic Cache
-            cached = semantic_cache.lookup(request.question)
+            # 1. Load history trước cache để phân vùng theo conversation context.
+            history = db.get_recent_messages_for_context(session_id, last_n=6)
+            cache_context = _cache_context_key(history)
+
+            # 2. Check Semantic Cache
+            cached = semantic_cache.lookup(
+                request.question,
+                context_key=cache_context,
+                corpus_version=RAG_CORPUS_VERSION,
+            )
             if cached:
+                cached_confidence = round(cached.get("confidence_score", 0.0), 4)
                 print(f"⚡ [Stream Cache HIT] [{user['email']}] [{session_id}]")
-                # Lưu vào DB bất đồng bộ
                 db.save_message(session_id, "user", request.question)
 
                 chunk_size = 8
@@ -285,21 +354,19 @@ async def chat_stream_endpoint(
                     await asyncio.sleep(0.01)
 
                 db.save_message(session_id, "assistant", ans,
-                               confidence_score=1.0, docs_retrieved=cached["docs_count"])
+                               confidence_score=cached_confidence, docs_retrieved=cached["docs_count"])
+                if not history:
+                    db.update_session_title(session_id, user["user_id"], request.question)
                 db.touch_session(session_id)
 
-                yield f"data: {json.dumps({'event': 'done', 'cache_hit': True, 'documents_retrieved': cached['docs_count'], 'confidence_score': 1.0, 'session_id': session_id}, ensure_ascii=False)}\n\n"
+                yield f"data: {json.dumps({'event': 'done', 'cache_hit': True, 'documents_retrieved': cached['docs_count'], 'confidence_score': cached_confidence, 'session_id': session_id}, ensure_ascii=False)}\n\n"
                 return
-
-            # 2. Load lịch sử từ DB
-            history = db.get_recent_messages_for_context(session_id, last_n=6)
 
             # 3. Lưu câu hỏi của user ngay lập tức
             db.save_message(session_id, "user", request.question)
 
             # 4. Cập nhật tiêu đề nếu đây là tin nhắn đầu tiên
-            existing_messages = db.get_session_messages(session_id, limit=2)
-            if len(existing_messages) <= 1:
+            if not history:
                 db.update_session_title(session_id, user["user_id"], request.question)
 
             config = {"configurable": {"thread_id": session_id}}
@@ -308,48 +375,70 @@ async def chat_stream_endpoint(
                 "chat_history": history,
                 "retry_count": 0,
                 "confidence_score": 0.0,
+                "documents": [],
+                "answer": "",
+                "standalone_question": "",
+                "is_web_searched": False,
+                "needs_clarification": False,
+                "clarification_question": "",
+                "cacheable": True,
             }
 
-            full_answer = ""
-            confidence = 0.0
-            num_docs = 0
+            # Không forward token từ các generation trung gian. Một generation có
+            # thể bị hallucination grader từ chối và graph sẽ regenerate/fallback.
+            # Streaming token đó sẽ làm lộ câu trả lời chưa được xác minh, đồng
+            # thời khiến nhiều lần retry bị nối vào cùng một response.
+            rag_task = asyncio.create_task(rag_agent.ainvoke(inputs, config=config))
 
-            async for event in rag_agent.astream_events(inputs, config=config, version="v2"):
-                event_type = event.get("event")
-                tags = event.get("tags", [])
+            # Giữ kết nối SSE sống trong lúc retrieval/grading/verification chạy.
+            # Frontend hiện tại bỏ qua event heartbeat một cách an toàn.
+            while not rag_task.done():
+                done, _ = await asyncio.wait({rag_task}, timeout=15)
+                if not done:
+                    yield f"data: {json.dumps({'event': 'heartbeat'}, ensure_ascii=False)}\n\n"
 
-                # CHỈ stream token từ LLM chain trả lời (tag 'user_generation')
-                if event_type == "on_chat_model_stream" and "user_generation" in tags:
-                    chunk_data = event.get("data", {}).get("chunk")
-                    if chunk_data and hasattr(chunk_data, "content") and chunk_data.content:
-                        text_chunk = chunk_data.content
-                        if isinstance(text_chunk, str):
-                            full_answer += text_chunk
-                            yield f"data: {json.dumps({'token': text_chunk}, ensure_ascii=False)}\n\n"
+            result = await rag_task
+            final_answer = result.get(
+                "answer",
+                "Xin lỗi, hệ thống không thể trả lời câu hỏi này.",
+            )
+            confidence = round(result.get("confidence_score", 0.0), 4)
+            num_docs = len(result.get("documents", []))
 
-                elif event_type == "on_chain_end" and event.get("name") == "LangGraph":
-                    output = event.get("data", {}).get("output", {})
-                    if isinstance(output, dict):
-                        confidence = round(output.get("confidence_score", 0.0), 4)
-                        num_docs = len(output.get("documents", []))
-                        if not full_answer and "answer" in output:
-                            full_answer = output["answer"]
-                            yield f"data: {json.dumps({'token': full_answer}, ensure_ascii=False)}\n\n"
+            # Chỉ stream final state sau khi graph đã chạy xong verifier và mọi
+            # retry/fallback. Chia nhỏ để giữ nguyên giao thức token hiện có.
+            chunk_size = 24
+            for i in range(0, len(final_answer), chunk_size):
+                token = final_answer[i:i + chunk_size]
+                yield f"data: {json.dumps({'token': token}, ensure_ascii=False)}\n\n"
+                await asyncio.sleep(0.005)
 
             # 5. Lưu câu trả lời vào DB
-            if full_answer:
-                db.save_message(session_id, "assistant", full_answer,
+            if final_answer:
+                db.save_message(session_id, "assistant", final_answer,
                                confidence_score=confidence, docs_retrieved=num_docs)
                 db.touch_session(session_id)
 
             # 6. Cập nhật semantic cache
-            if num_docs > 0 and full_answer:
-                semantic_cache.store(request.question, full_answer, num_docs)
+            if num_docs > 0 and final_answer and result.get("cacheable", True):
+                semantic_cache.store(
+                    request.question,
+                    final_answer,
+                    num_docs,
+                    confidence_score=confidence,
+                    context_key=cache_context,
+                    corpus_version=RAG_CORPUS_VERSION,
+                )
 
             yield f"data: {json.dumps({'event': 'done', 'cache_hit': False, 'documents_retrieved': num_docs, 'confidence_score': confidence, 'session_id': session_id}, ensure_ascii=False)}\n\n"
 
         except Exception as e:
             yield f"data: {json.dumps({'error': str(e)}, ensure_ascii=False)}\n\n"
+        finally:
+            # Nếu client đóng kết nối trước khi graph hoàn tất, không để pipeline
+            # tiếp tục chạy ngầm và tiêu tốn LLM/retrieval resources.
+            if rag_task is not None and not rag_task.done():
+                rag_task.cancel()
 
     return StreamingResponse(
         event_generator(),
@@ -373,7 +462,11 @@ async def get_me(user: dict = Depends(get_current_user)):
 
 @app.get("/api/v1/cache/stats")
 async def cache_stats(user: dict = Depends(get_current_user)):
-    return {"cache_size": semantic_cache.size, "threshold": semantic_cache._threshold}
+    return {
+        "cache_size": semantic_cache.size,
+        "threshold": semantic_cache._threshold,
+        "corpus_version": RAG_CORPUS_VERSION,
+    }
 
 
 @app.delete("/api/v1/cache/clear")

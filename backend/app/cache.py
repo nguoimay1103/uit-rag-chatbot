@@ -2,7 +2,8 @@
 SemanticCache - Bộ nhớ đệm ngữ nghĩa cho hệ thống RAG UIT.
 
 Cách hoạt động:
-- Khi nhận câu hỏi mới, tính embedding và so sánh cosine similarity với cache.
+- Khi nhận câu hỏi mới, chỉ so sánh với entries cùng ngữ cảnh và phiên bản
+  corpus, sau đó tính cosine similarity.
 - Nếu similarity >= SIMILARITY_THRESHOLD -> trả về câu trả lời đã cache (bỏ qua pipeline).
 - Nếu không khớp -> xử lý pipeline bình thường rồi lưu kết quả vào cache.
 
@@ -40,7 +41,7 @@ class SemanticCache:
     def __init__(self, embeddings_model, threshold: float = SIMILARITY_THRESHOLD):
         self._embeddings = embeddings_model
         self._threshold = threshold
-        # Mỗi entry: {"embedding": [...], "answer": "...", "docs_count": N, "timestamp": T, "question": "..."}
+        # Mỗi entry gồm embedding, answer, context_key, corpus_version và metadata.
         self._store: list[dict] = []
 
     def _embed(self, text: str) -> list[float]:
@@ -58,7 +59,13 @@ class SemanticCache:
             self._store.sort(key=lambda e: e["timestamp"])
             self._store.pop(0)
 
-    def lookup(self, question: str) -> Optional[dict]:
+    def lookup(
+        self,
+        question: str,
+        *,
+        context_key: str = "root",
+        corpus_version: str = "default",
+    ) -> Optional[dict]:
         """
         Tìm câu trả lời đã cache cho câu hỏi.
         Trả về dict {"answer": ..., "docs_count": ...} nếu tìm thấy, None nếu cache miss.
@@ -67,11 +74,19 @@ class SemanticCache:
         if not self._store:
             return None
 
+        candidates = [
+            entry for entry in self._store
+            if entry["context_key"] == context_key
+            and entry["corpus_version"] == corpus_version
+        ]
+        if not candidates:
+            return None
+
         q_embedding = self._embed(question)
 
         best_score = -1.0
         best_entry = None
-        for entry in self._store:
+        for entry in candidates:
             score = _cosine_similarity(q_embedding, entry["embedding"])
             if score > best_score:
                 best_score = score
@@ -81,12 +96,25 @@ class SemanticCache:
             print(f"⚡ [Cache HIT] Similarity={best_score:.4f} | Câu hỏi khớp: '{best_entry['question'][:60]}...'")
             # Cập nhật timestamp để "làm mới" entry (LRU touch)
             best_entry["timestamp"] = time.time()
-            return {"answer": best_entry["answer"], "docs_count": best_entry["docs_count"]}
+            return {
+                "answer": best_entry["answer"],
+                "docs_count": best_entry["docs_count"],
+                "confidence_score": best_entry["confidence_score"],
+            }
 
         print(f"🔍 [Cache MISS] Best similarity={best_score:.4f} < threshold={self._threshold}")
         return None
 
-    def store(self, question: str, answer: str, docs_count: int):
+    def store(
+        self,
+        question: str,
+        answer: str,
+        docs_count: int,
+        *,
+        confidence_score: float = 0.0,
+        context_key: str = "root",
+        corpus_version: str = "default",
+    ):
         """Lưu câu hỏi + câu trả lời vào cache."""
         self._evict_expired()
         self._evict_lru()
@@ -96,6 +124,9 @@ class SemanticCache:
             "question": question,
             "answer": answer,
             "docs_count": docs_count,
+            "confidence_score": confidence_score,
+            "context_key": context_key,
+            "corpus_version": corpus_version,
             "timestamp": time.time(),
         })
         print(f"💾 [Cache STORE] Đã lưu câu hỏi vào cache. Kích thước cache hiện tại: {len(self._store)}")
