@@ -1,12 +1,8 @@
-FROM python:3.10-slim
+FROM nginx:1.27-alpine
 
-WORKDIR /app
+COPY index.html /usr/share/nginx/html/index.html
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+EXPOSE 80
 
-COPY . .
-
-EXPOSE 8501
-
-CMD ["python", "frontend.py"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1/ || exit 1

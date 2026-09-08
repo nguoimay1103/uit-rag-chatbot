@@ -1,7 +1,9 @@
 # System Benchmark v2 — Production Baseline
 
-Ngày chạy: 2026-09-08  
-Profile: `full` (72 cases)  
+Ngày chạy: 2026-09-08
+
+Profile: `full` (72 cases)
+
 Runtime: production mode, local reranker disabled
 
 | Metric | Result | Gate |

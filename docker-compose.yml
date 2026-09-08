@@ -19,17 +19,12 @@ services:
     build: ./frontend
     container_name: uit_rag_frontend
     ports:
-      - "8501:8501"
+      - "8501:80"
     depends_on:
       - backend
-    environment:
-      # Báo cho Gradio biết Backend đang nằm ở vùng mạng nội bộ có tên service là 'backend'
-      - BACKEND_URL=http://backend:8000
     networks:
       - rag_network
     restart: unless-stopped
-    volumes:
-      - ./frontend:/app
 
 networks:
   rag_network:

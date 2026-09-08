@@ -103,7 +103,7 @@ git push origin main
 3. Cấu hình:
    - **Name**: `uit-rag-backend`
    - **Region**: Singapore
-   - **Build Command**: `pip install -r backend/requirements.txt`
+   - **Build Command**: `pip install -r backend/requirements-prod.txt`
    - **Start Command**: `python -m uvicorn backend.app.api:app --host 0.0.0.0 --port $PORT`
    - **Instance Type**: Free
 
@@ -117,6 +117,7 @@ SUPABASE_URL              = https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY = eyJhbGci...
 SUPABASE_JWT_SECRET       = your-jwt-secret
 USE_RERANKER              = false
+RAG_CORPUS_VERSION        = uit_admissions-v1
 BM25_PATH                 = data/processed/bm25_retriever.pkl
 ALLOWED_ORIGINS           = https://your-app.vercel.app,http://localhost:8501
 ```
