@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # requirements-prod.txt — Production (Render.com Free Tier)
 # KHÔNG có sentence-transformers / torch / transformers
-# USE_RERANKER=false → chạy Qdrant Hybrid RRF, không cần PyTorch
+# USE_RERANKER=false → chạy Weighted RRF trên Qdrant dense + BM25, không cần PyTorch
 # ─────────────────────────────────────────────────────────────────────────────
 
 # --- CORE API ---

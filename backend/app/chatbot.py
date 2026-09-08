@@ -16,9 +16,12 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from pydantic import BaseModel, Field
 from langgraph.graph import StateGraph, START, END
-from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import CommaSeparatedListOutputParser
+try:
+    from .fusion import reciprocal_rank_fusion
+except ImportError:
+    from fusion import reciprocal_rank_fusion
 # HuggingFaceCrossEncoder được import LAZY — chỉ khi USE_RERANKER=true
 # Tránh kéo theo torch (~700MB) khi chạy production với USE_RERANKER=false
 load_dotenv()
@@ -30,9 +33,16 @@ import math
 
 # ── Adaptive Reranker Strategy ──────────────────────────────────────────────
 # USE_RERANKER=true  (default, local dev)  → load BAAI/bge-reranker-v2-m3
-# USE_RERANKER=false (production Render)   → Qdrant Hybrid RRF làm ranking
+# USE_RERANKER=false (production Render)   → Weighted RRF dense + BM25
 # ─────────────────────────────────────────────────────────────────────────────
 USE_RERANKER = os.getenv("USE_RERANKER", "true").lower() == "true"
+RRF_K = 60
+FUSION_CANDIDATE_LIMIT = 20
+FINAL_DOCUMENT_LIMIT = 5
+ORIGINAL_QUERY_WEIGHT = 1.25
+REWRITTEN_QUERY_WEIGHT = 1.0
+DENSE_RETRIEVAL_WEIGHT = 1.0
+BM25_RETRIEVAL_WEIGHT = 1.0
 
 class LexicalReranker:
     """Reranker dự phòng thuần từ khóa — 0 RAM, 0 disk."""
@@ -71,15 +81,19 @@ class ResilientReranker:
 if USE_RERANKER:
     _reranker_model = ResilientReranker()
 else:
-    print("ℹ️  [Adaptive Reranker] USE_RERANKER=false — Dùng Qdrant Hybrid RRF thay thế (production mode).")
+    print("ℹ️  [Adaptive Reranker] USE_RERANKER=false — Dùng Weighted RRF dense + BM25 (production mode).")
     _reranker_model = None
 
 
-def rerank_documents(query: str, documents: list) -> tuple[list, float]:
+def rerank_documents(
+    query: str,
+    documents: list,
+    retrieval_confidence: float = 0.0,
+) -> tuple[list, float]:
     """
     Xếp hạng tài liệu.
     - USE_RERANKER=true : BAAI cross-encoder (tốt nhất, ~1.5GB RAM)
-    - USE_RERANKER=false: Qdrant Hybrid đã ranked → chỉ lấy top-5, tính confidence
+    - USE_RERANKER=false: dùng thứ hạng Weighted RRF đã tính trước đó
     """
     if not documents:
         return [], 0.0
@@ -90,18 +104,17 @@ def rerank_documents(query: str, documents: list) -> tuple[list, float]:
         pairs = [[query, doc.page_content] for doc in documents]
         scores = _reranker_model.client.predict(pairs)
         scored_docs = sorted(zip(scores, documents), key=lambda x: x[0], reverse=True)
-        top_docs = [doc for _, doc in scored_docs[:5]]
+        top_docs = [doc for _, doc in scored_docs[:FINAL_DOCUMENT_LIMIT]]
         top_score = float(scored_docs[0][0]) if scored_docs else 0.0
         confidence = round(1 / (1 + math.exp(-top_score)), 4)
         print(f"   ✅ Top {len(top_docs)} | Confidence={confidence:.2%}")
         return top_docs, confidence
     else:
-        # ── Chế độ Qdrant Hybrid RRF (production) ──
-        # Qdrant đã sắp xếp theo RRF score, chỉ cần lấy top-5
-        top_docs = documents[:5]
-        # Ước tính confidence từ số lượng docs được retrieve
-        confidence = round(min(0.5 + len(top_docs) * 0.08, 0.92), 4)
-        print(f"📊 [Reranker] Qdrant RRF mode — Lấy top {len(top_docs)} | Confidence={confidence:.2%}")
+        # ── Chế độ Weighted RRF (production) ──
+        # Candidate pool đã được fusion trên mọi retriever và query variant.
+        top_docs = documents[:FINAL_DOCUMENT_LIMIT]
+        confidence = round(max(0.0, min(retrieval_confidence, 1.0)), 4)
+        print(f"📊 [Reranker] Weighted RRF mode — Lấy top {len(top_docs)} | Retrieval consensus={confidence:.2%}")
         return top_docs, confidence
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 qdrant_vectorstore = QdrantVectorStore.from_existing_collection(
@@ -131,20 +144,16 @@ print(f"Đang tải bộ tìm kiếm từ khóa BM25 từ {BM25_PATH}...")
 with open(BM25_PATH, "rb") as f:
     bm25_retriever = pickle.load(f)
 
-def custom_hybrid_search(query):
-    qdrant_docs = qdrant_retriever.invoke(query)
+def retrieve_ranked_sources(query):
+    """Trả về hai ranking độc lập để fusion ở cấp toàn bộ query variants."""
+    dense_docs = qdrant_retriever.invoke(query)
     bm25_docs = bm25_retriever.invoke(query)
-    
-    unique_docs = []
-    seen_content = set()
-    for i in range(max(len(qdrant_docs), len(bm25_docs))):
-        if i < len(bm25_docs) and bm25_docs[i].page_content not in seen_content:
-            unique_docs.append(bm25_docs[i])
-            seen_content.add(bm25_docs[i].page_content)
-        if i < len(qdrant_docs) and qdrant_docs[i].page_content not in seen_content:
-            unique_docs.append(qdrant_docs[i])
-            seen_content.add(qdrant_docs[i].page_content)
-    return unique_docs[:5]
+    return dense_docs, bm25_docs
+
+
+def document_fusion_key(document) -> str:
+    """Khóa chung giữa bản Document lấy từ Qdrant và BM25."""
+    return document.page_content
 
 # ==========================================
 # PHẦN 2: KHỞI TẠO LLM VÀ GIÁM KHẢO (GRADER)
@@ -216,6 +225,7 @@ class GraphState(TypedDict):
     is_web_searched: bool     # Flag cho CRAG Web Search
     needs_clarification: bool # Flag cho Self-RAG Ambiguity
     clarification_question: str
+    cacheable: bool           # Chỉ cache câu trả lời grounded từ corpus nội bộ
 def reformulate_node(state: GraphState):
     question = state["question"]
     history = state.get("chat_history", [])
@@ -279,9 +289,19 @@ def multi_query_generator(original_query):
     
     chain = prompt | llm | output_parser
     variants = chain.invoke({"query": original_query})
-    
-    # Trả về danh sách gồm câu gốc + 3 câu nội suy
-    return [original_query] + variants
+
+    # Giới hạn chi phí và loại query trùng/rỗng do output của LLM không ổn định.
+    unique_queries = [original_query]
+    normalized_seen = {original_query.strip().casefold()}
+    for variant in variants:
+        cleaned = variant.strip()
+        normalized = cleaned.casefold()
+        if cleaned and normalized not in normalized_seen:
+            unique_queries.append(cleaned)
+            normalized_seen.add(normalized)
+        if len(unique_queries) == 4:
+            break
+    return unique_queries
 # --- BỘ ĐỊNH TUYẾN (SEMANTIC ROUTER) —— 3 nhãn ---
 class RouteQuery(BaseModel):
     """Định tuyến câu hỏi của người dùng tới đúng bộ phận xử lý."""
@@ -337,18 +357,31 @@ def retrieve_node(state: GraphState):
     search_query = state.get("standalone_question", original_question)
     queries = multi_query_generator(search_query)
 
-    all_docs = []
-    seen_content = set()
+    ranked_lists = []
 
-    # Quét qua tất cả các phiên bản câu hỏi
-    for q in queries:
-        docs = custom_hybrid_search(q)
-        for d in docs:
-            if d.page_content not in seen_content:
-                all_docs.append(d)
-                seen_content.add(d.page_content)
+    # Giữ ranking của từng nguồn để RRF cộng mức đồng thuận giữa dense/BM25
+    # và giữa câu hỏi gốc/các query rewrite.
+    for query_index, query in enumerate(queries):
+        dense_docs, bm25_docs = retrieve_ranked_sources(query)
+        query_weight = (
+            ORIGINAL_QUERY_WEIGHT if query_index == 0 else REWRITTEN_QUERY_WEIGHT
+        )
+        ranked_lists.extend([
+            (dense_docs, query_weight * DENSE_RETRIEVAL_WEIGHT),
+            (bm25_docs, query_weight * BM25_RETRIEVAL_WEIGHT),
+        ])
 
-    final_top_docs, confidence = rerank_documents(original_question, all_docs)
+    fused_docs, _, retrieval_confidence = reciprocal_rank_fusion(
+        ranked_lists,
+        key_fn=document_fusion_key,
+        rrf_k=RRF_K,
+    )
+    candidates = fused_docs[:FUSION_CANDIDATE_LIMIT]
+    final_top_docs, confidence = rerank_documents(
+        search_query,
+        candidates,
+        retrieval_confidence=retrieval_confidence,
+    )
     return {
         "documents": final_top_docs,
         "question": original_question,
@@ -465,7 +498,11 @@ def web_search_node(state: GraphState):
 
     existing_docs = state.get("documents", [])
     combined_docs = existing_docs + web_docs
-    return {"documents": combined_docs, "is_web_searched": True}
+    return {
+        "documents": combined_docs,
+        "is_web_searched": True,
+        "cacheable": False,
+    }
 
 
 # Điều hướng: Có nên trả lời không (Cập nhật CRAG)?
@@ -500,6 +537,7 @@ def no_context_node(state: GraphState):
         ),
         "documents": [],
         "question": question,
+        "cacheable": False,
     }
 
 # Node 3: Sinh câu trả lời (Few-Shot)
@@ -612,7 +650,10 @@ def regenerate_node(state: GraphState):
 def fallback_node(state: GraphState):
     retry_count = state.get("retry_count", 0)
     print(f"   🛡️ [Safety] Đã hết {retry_count} lần thử - Chặn câu trả lời bịa đặt!")
-    return {"answer": "Dựa trên quy chế hiện tại, tôi đã tìm thấy một vài tài liệu liên quan nhưng không thể đưa ra kết luận chắc chắn sau nhiều lần kiểm định. Để đảm bảo chính xác, bạn vui lòng liên hệ trực tiếp **Phòng Đào Tạo Đại học (P.ĐTĐH)** để được giải đáp chính thức."}
+    return {
+        "answer": "Dựa trên quy chế hiện tại, tôi đã tìm thấy một vài tài liệu liên quan nhưng không thể đưa ra kết luận chắc chắn sau nhiều lần kiểm định. Để đảm bảo chính xác, bạn vui lòng liên hệ trực tiếp **Phòng Đào Tạo Đại học (P.ĐTĐH)** để được giải đáp chính thức.",
+        "cacheable": False,
+    }
 
 # ==========================================
 # NODE 5a: TRẠM TỪ CHỐI NGOÀI DOMAIN (Đề xuất 2)
@@ -814,9 +855,9 @@ workflow.add_edge("no_context", END)
 workflow.add_edge("direct_answer", END)
 workflow.add_edge("out_of_domain", END)   # MỚI: Đề xuất 2
 
-# 3. Đóng gói hệ thống với Session Memory
-memory_checkpointer = MemorySaver()
-app = workflow.compile(checkpointer=memory_checkpointer)
+# 3. Đóng gói hệ thống. Supabase là nguồn hội thoại duy nhất; không giữ lại
+# transient graph state giữa các request để tránh documents/flags rò sang turn sau.
+app = workflow.compile()
 
 if __name__ == "__main__":
     print("\n🚀 Chatbot UIT (Agentic RAG) đã khởi động!")

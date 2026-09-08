@@ -111,17 +111,17 @@ def save_message(
 
 
 def get_session_messages(session_id: str, limit: int = 50) -> list:
-    """Lấy lịch sử tin nhắn của một phiên chat."""
+    """Lấy tối đa limit tin nhắn mới nhất, trả về theo thời gian tăng dần."""
     db = get_supabase()
     result = (
         db.table("chat_messages")
         .select("role, content, confidence_score, docs_retrieved, created_at")
         .eq("session_id", session_id)
-        .order("created_at", desc=False)
+        .order("created_at", desc=True)
         .limit(limit)
         .execute()
     )
-    return result.data or []
+    return list(reversed(result.data or []))
 
 
 def get_recent_messages_for_context(session_id: str, last_n: int = 6) -> list[dict]:
@@ -129,10 +129,8 @@ def get_recent_messages_for_context(session_id: str, last_n: int = 6) -> list[di
     Lấy N tin nhắn gần nhất để đưa vào prompt context.
     Returns format: [{"role": "user"|"assistant", "content": "..."}]
     """
-    messages = get_session_messages(session_id, limit=last_n * 2)
-    # Lấy last_n * 2 nhưng chỉ trả về last_n
-    recent = messages[-(last_n * 2):]
-    return [{"role": m["role"], "content": m["content"]} for m in recent]
+    messages = get_session_messages(session_id, limit=last_n)
+    return [{"role": m["role"], "content": m["content"]} for m in messages]
 
 
 def verify_session_owner(session_id: str, user_id: str) -> bool:
