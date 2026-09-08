@@ -1,0 +1,31 @@
+{
+  "name": "UIT RAG Chatbot System Benchmark",
+  "version": "2.0",
+  "core_dataset": "../test/test_dataset.json",
+  "supplemental_dataset": "supplemental_cases.json",
+  "judge_model": "gpt-4o-mini",
+  "score_weights": {
+    "correctness": 0.35,
+    "faithfulness": 0.30,
+    "relevance": 0.20,
+    "behavior": 0.15
+  },
+  "gates": {
+    "overall_score_min": 0.75,
+    "academic_qa_score_min": 0.72,
+    "behavior_score_min": 0.80,
+    "source_hit_rate_min": 0.70,
+    "critical_failures_max": 0
+  },
+  "smoke_core_indices": [1, 3, 8, 15, 18, 26, 27, 28, 31, 33, 41, 43],
+  "smoke_supplemental_ids": [
+    "direct-001",
+    "ood-001",
+    "ood-003",
+    "ambiguous-001",
+    "ambiguous-003",
+    "negative-001",
+    "multiturn-001",
+    "multiturn-003"
+  ]
+}
